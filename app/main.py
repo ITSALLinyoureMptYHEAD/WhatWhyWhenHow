@@ -20,11 +20,8 @@ def main():
                     full_path = os.path.join(dir, args[1])
                     if os.path.isfile(full_path) and os.access(full_path, os.X_OK):
                         print(f"{arg[1]} is {full_path}")
-                        break
                 else:
                 print(f"{args[1]}: not found")
-
-
         else:
             print(f"{command}: command not found")
 
