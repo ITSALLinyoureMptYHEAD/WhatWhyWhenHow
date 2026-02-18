@@ -9,7 +9,7 @@ def main():
             break
         if command == "echo":
             input()
-                print(input())
+            print(input())
         print(f"{command}: command not found")
 
 
