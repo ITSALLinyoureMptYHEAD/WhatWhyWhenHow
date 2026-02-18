@@ -7,11 +7,11 @@ def main():
         command = input()
         if command == "exit":
             break
-        else if command == "echo":
-        if command == "echo":
+        elif command == "echo":
             input()
             print(input())
         print(f"{command}: command not found")
+
 
 if __name__ == "__main__":
     main()
