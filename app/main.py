@@ -10,7 +10,7 @@ def main():
         elif command == "echo":
             input()
             print(input())
-        print(f"{command}: command not found")
+        elif print(f"{command}: command not found")
 
 
 if __name__ == "__main__":
