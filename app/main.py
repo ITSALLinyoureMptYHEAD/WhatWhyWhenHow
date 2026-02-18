@@ -7,15 +7,15 @@ def main():
         command = input()
         if command == "exit":
             break
-        elif command.startswith("echo "):
+        elif command.startswith("echo ", "echo"):
             args = command.split(" ", 1)
             print(args[1])
-        elif command.startswith("type "):
+        elif command.startswith("type ", "type"):
             args = command.split(" ", 1)
             if args[1] in ("echo", "exit", "type"):
                 print(f"{args[1]} is a shell builtin")
             else:
-                print(f"{args[1]}: command not found")
+                print(f"{command}: command not found")
         else:
             print(f"{command}: command not found")
 
