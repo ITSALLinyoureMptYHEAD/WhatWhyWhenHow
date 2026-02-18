@@ -12,7 +12,7 @@ def main():
             print(args[1])
         elif command.startswith("type "):
             args = command.split(" ", 1)
-            if(args[1]) = (command = input())
+            if(args[1]) = ("echo" or "exit" or "type")
             print("{command}" + " " + "is a shell builtin! :D")
         else:
             print(f"{command}: command not found")
