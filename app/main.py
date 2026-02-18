@@ -10,6 +10,10 @@ def main():
         elif command.startswith("echo "):
             args = command.split(" ", 1)
             print(args[1])
+        elif command.startswith("type "):
+            args = command.split(" ", 1)
+            if(args[1]) = (command = input())
+            print("{command}" + " " + "is a shell builtin! :D")
         else:
             print(f"{command}: command not found")
 
