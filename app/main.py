@@ -11,6 +11,7 @@ def main():
             input()
             print(input())
         print(f"{command}: command not found")
+            else if command == "echo"
 
 
 if __name__ == "__main__":
