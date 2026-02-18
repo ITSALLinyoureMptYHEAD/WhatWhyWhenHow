@@ -1,4 +1,5 @@
 import sys
+import os
 
 
 def main():
@@ -14,8 +15,11 @@ def main():
             args = command.split(" ", 1)
             if args[1] in ("echo", "exit", "type"):
                 print(f"{args[1]} is a shell builtin")
-            elif args[1] in (__path__):
-                print(f"{command} is {__path__}")
+            for dir in path_dirs:
+                full_path = os.path.join(dir, args[1])
+                if os.path.isfile(full_path) and os.access(full_path, os.X_OK):
+                    print(f"{command} is {full_path}")
+                    break
             else:
                 print(f"{args[1]}: not found")
 
