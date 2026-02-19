@@ -4,6 +4,8 @@ import os
 
 def main():
     while True:
+        os.environ.get("PATH")
+        os.pathsep
         sys.stdout.write("$ ")
         command = input()
         if command == "exit":
