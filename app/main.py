@@ -4,9 +4,20 @@ import os
 
 def main():
     while True:
+        
         path = os.environ.get("PATH", "")
         path_separator = os.pathsep
         os.access(path, os.X_OK)
+        for directory in path.split(path_separator):
+        full_path = os.path.join(directory, command_name)
+        if os.path.isfile(full_path) and os.access(full_path, os.X_OK):
+            print(f"{command_name} is {full_path}")
+            return
+        try:
+        if os.path.isdir(directory):
+            except OSError:
+            continue
+
         sys.stdout.write("$ ")
         command = input()
         if command == "exit":
