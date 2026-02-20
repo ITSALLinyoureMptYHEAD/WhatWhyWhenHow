@@ -6,13 +6,14 @@ def main():
     while True:
         sys.stdout.write("$ ")
         command = input()
+        builtins = {"echo", "exit", "type"}
         if command == "exit":
             break
         if args[1] in ("echo", "exit", "type"):
-                print(f"{args[1]} is a shell builtin")
-            else:
-                print(f"{args[1]}: not found")
+            print(f"{args[1]} is a shell builtin")
         else:
+            print(f"{args[1]}: not found")
+        elif:
             print(f"{command}: command not found")
         elif command.startswith("echo "):
             args = command.split("echo", " ", 1)
@@ -20,8 +21,8 @@ def main():
         elif command.startswith("echo"):
             args = command.split("echo", 1)
             print(args[1])
-        if command.startswith("type "):
-            args = command.split("type", " ", 1)
+        elif command.startswith("type "):
+            args = command.split(" ", 1)
             command_name = args[1]
         elif command.startswith("type"):
             args = command.split("type", 1)
