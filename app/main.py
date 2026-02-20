@@ -23,16 +23,15 @@ def main():
             elif command_name not in builtins:
                 path = os.environ.get("PATH", "")
                 path_separator = os.pathsep
-                full_path = os.path.join(directory, command_name)
-                os.access(full_path, os.X_OK)
                 for directory in path.split(path_separator):
+                    full_path = os.path.join(directory, command_name)
                     if os.path.isfile(full_path) and os.access(full_path, os.X_OK):
                         print(f"{command_name} is {full_path}")
                         found = True
                         break
                     if not os.path.isdir(directory):
+                        found = False
                         try:
-                            found = False
                             print(f"{command_name}: not found")
                         except OSError:
                             break
