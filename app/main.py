@@ -35,8 +35,7 @@ def main():
                         print(f"{args[1]}: not found")
                         continue
                     elif OSError:
-                        print(f"OSError, FIX ME!")
-                        break
+                        continue
                     else:
                         print(f"{command}: command not found")
                         continue
