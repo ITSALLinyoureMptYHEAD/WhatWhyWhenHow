@@ -30,11 +30,11 @@ def main():
                         print(f"{command_name} is {full_path}")
                         found = True
                         break
-                    if not found:
-                        try:
-                            print(f"{command_name}: not found")
-                        except OSError:
-                            break
+                if not found:
+                    try:
+                        print(f"{command_name}: not found")
+                    except OSError:
+                        break
         else:
             print(f"{command}: command not found")
 
