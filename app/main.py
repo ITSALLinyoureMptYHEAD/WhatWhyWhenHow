@@ -36,7 +36,7 @@ def main():
                         continue
                     elif OSError:
                         print(f"OSError, FIX ME!")
-                        continue
+                        break
                     else:
                         print(f"{command}: command not found")
                         continue
