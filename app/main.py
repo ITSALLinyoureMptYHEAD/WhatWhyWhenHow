@@ -6,8 +6,9 @@ def main():
     while True:
         sys.stdout.write("$ ")
         command = input()
-        elif command.startswith("type "):
+        if command.startswith("type "):
             args = command.split(" ", 1)
+            command_name = args[1]
         if not builtin:
         path = os.environ.get("PATH", "")
         path_separator = os.pathsep
@@ -18,8 +19,8 @@ def main():
                 print(f"{command_name} is {full_path}")
                 return
         try:
-        if os.path.isdir(directory):
-            except OSError:
+        if not os.path.isdir(directory):
+            OSError:
             continue
 
         if command == "exit":
