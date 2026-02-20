@@ -19,11 +19,12 @@ def main():
             command_name = args[1]
             if args[1] in ("echo", "exit", "type"):
                 print(f"{args[1]} is a shell builtin")
-                break
+                continue
             elif command_name not in builtins:
                 found = False
                 path = os.environ.get("PATH", "")
-                path.split(os.pathsep)
+                os.pathsep
+                os.access(full_path, os.X_OK)
                 for directory in path.split(path_separator):
                     full_path = os.path.join(directory, command_name)
                     if os.path.isfile(full_path) and os.access(full_path, os.X_OK):
@@ -33,8 +34,7 @@ def main():
                     if not os.path.isdir(directory):
                         found = False
                         print(f"{command_name}: not found")
-                        break
-                    except OSError:
+                    except OSError try:
                     break
         else:
             print(f"{command}: command not found")
