@@ -6,8 +6,25 @@ def main():
     while True:
         sys.stdout.write("$ ")
         command = input()
+        if command == "exit":
+            break
+        if args[1] in ("echo", "exit", "type"):
+                print(f"{args[1]} is a shell builtin")
+            else:
+                print(f"{args[1]}: not found")
+        else:
+            print(f"{command}: command not found")
+        elif command.startswith("echo "):
+            args = command.split("echo", " ", 1)
+            print(args[1])
+        elif command.startswith("echo"):
+            args = command.split("echo", 1)
+            print(args[1])
         if command.startswith("type "):
-            args = command.split(" ", 1)
+            args = command.split("type", " ", 1)
+            command_name = args[1]
+        elif command.startswith("type"):
+            args = command.split("type", 1)
             command_name = args[1]
         if not builtin:
         path = os.environ.get("PATH", "")
@@ -18,23 +35,9 @@ def main():
             if os.path.isfile(full_path) and os.access(full_path, os.X_OK):
                 print(f"{command_name} is {full_path}")
                 return
-        try:
         if not os.path.isdir(directory):
             OSError:
             continue
-
-        if command == "exit":
-            break
-        elif command.startswith("echo "):
-            args = command.split(" ", 1)
-            print(args[1])
-            if args[1] in ("echo", "exit", "type"):
-                print(f"{args[1]} is a shell builtin")
-            else:
-                print(f"{args[1]}: not found")
-        else:
-            print(f"{command}: command not found")
-
 
 if __name__ == "__main__":
     main()
