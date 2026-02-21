@@ -39,12 +39,12 @@ def main():
         elif command not in builtins:
             path = os.environ.get("PATH", "")
             path_separator = os.pathsep
-            command.startswith("")
             command_name = args[1]
+            args = command.split("", 1)
             for directory in path.split(path_separator):
                 full_path = os.path.join(directory, command_name)
             if os.path.isfile(full_path) and os.access(full_path, os.X_OK):
-                continue
+                execute
             args = command.split(f"{command} ", 1, 2)
             print(f"{command}" + [1] + [2])
 
