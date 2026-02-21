@@ -36,9 +36,10 @@ def main():
                     except OSError:
                         break
 
-        elif command is not builtins:
+        elif command not in builtins:
             path = os.environ.get("PATH", "")
             path_separator = os.pathsep
+            command.startswith("")
             command_name = args[1]
             for directory in path.split(path_separator):
                 full_path = os.path.join(directory, command_name)
