@@ -40,7 +40,7 @@ def main():
             if os.path.isfile(full_path) and os.access(full_path, os.X_OK):
                 continue
             args = command.split(f"{command} ", 1, 2)
-            print(f"{command}" + 1 + 2)
+            print(f"{command}" + [1] + [2])
 
         else:
             print(f"{command}: command not found")
