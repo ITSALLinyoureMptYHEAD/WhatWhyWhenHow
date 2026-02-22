@@ -44,6 +44,7 @@ def main():
             for directory in path.split(path_separator):
                 full_path = os.path.join(directory, command_name)
                 if os.path.isfile(full_path) and os.access(full_path, os.X_OK):
+                found = True
                 if found:
                     pid = os.fork()
                     os.execvp(command_name, parts)
