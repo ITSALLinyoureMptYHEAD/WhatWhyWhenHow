@@ -18,7 +18,7 @@ def main():
             found = False
             args = command.split("type ", 1)
             command_name = args[1]
-            if args[1] in ("echo", "exit", "type"):
+            if args[1] in ("echo", "exit", "type", "pwd"):
                 print(f"{args[1]} is a shell builtin")
                 continue
             elif command_name not in builtins:
