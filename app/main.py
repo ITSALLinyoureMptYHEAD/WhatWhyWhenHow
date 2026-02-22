@@ -95,9 +95,8 @@ def main():
             # 3rd is "1" to only replace the first occurrence.
             #
         try:
-            if destination:
-                os.chdir(destination)
-                # chdir stands for CHange DIRectory
+            os.chdir(destination)
+            # chdir stands for CHange DIRectory
         except FileNotFoundError:
             print(f"cd: {destination}: No such file or directory")
         except NotADirectoryError:
