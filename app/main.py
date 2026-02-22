@@ -6,7 +6,7 @@ def main():
     while True:
         sys.stdout.write("$ ")
         command = input()
-        builtins = {"echo", "exit", "type", "pwd"}
+        builtins = {"echo", "exit", "type", "pwd", "cd"}
         if command == "exit":
             break
         elif command.startswith("echo "):
@@ -18,7 +18,7 @@ def main():
             found = False
             args = command.split("type ", 1)
             command_name = args[1]
-            if args[1] in ("echo", "exit", "type", "pwd"):
+            if args[1] in ("echo", "exit", "type", "pwd", "cd"):
                 print(f"{args[1]} is a shell builtin")
                 continue
             elif command_name not in builtins:
@@ -65,10 +65,22 @@ def main():
                 print(current_location)
             else:
                 print("Error: Could not retrieve directory.")
-
-
-#            print(os.getcwd())
-
-
+        elif command.startswith("cd"):
+            args = command.split("type ", 1)
+            path = os.environ.get("PATH", "")
+            path_separator = os.pathseppath = os.environ.get("PATH", "")
+            path_separator = os.pathsep  
+            for (os.getcwd()) in path.split(path_separator):
+                full_path = os.path.join(directory, command_name)
+                if os.path.isfile(full_path)
+                found = True
+                break
+            if found:
+                os.getcwd() from {arg[1]}
+            if not found:
+                try:
+                    print(f"{current_location}: not found")
+                except OSError:
+                    break
 if __name__ == "__main__":
     main()
