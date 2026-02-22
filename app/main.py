@@ -69,14 +69,14 @@ def main():
             command_name = parts[0]
             for directory in path.split(path_separator):
                 full_path = os.path.join(directory, command_name)
-                if os.path.isfile(full_path) and os.access(full_path, os.X_OK):
+                if os.path.isfile(full_path):
                     found = True
                     break
             if found:
                 print(f"{1, 2, } is {full_path}")
             if not found:
                 try:
-                    print(f"{print_working_directory}: not found")
+                    print(f"{pwd}: not found")
                 except OSError:
                     break
 
