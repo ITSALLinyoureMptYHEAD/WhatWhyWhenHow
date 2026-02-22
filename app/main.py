@@ -37,16 +37,18 @@ def main():
                         break
 
         elif command not in builtins:
+            found = True
+            command.startswith("type"):
             path = os.environ.get("PATH", "")
             path_separator = os.pathsep
+            args = command.split("type ", 1)
             command_name = args[1]
-            args = command.split("", 1)
             for directory in path.split(path_separator):
-                full_path = os.path.join(directory, command_name)
+            full_path = os.path.join(directory, command_name)
             if os.path.isfile(full_path) and os.access(full_path, os.X_OK):
-                execute
-            args = command.split(f"{command} ", 1, 2)
-            print(f"{command}" + [1] + [2])
+                os.fork()
+                os.execvp(command_name, parts)
+                os.waitpid(pid, 0)
 
         else:
             print(f"{command}: command not found")
