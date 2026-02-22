@@ -65,12 +65,14 @@ def main():
                 print(current_location)
             else:
                 print("Error: Could not retrieve directory.")
+
+
         elif command.startswith("cd"):
             args = command.split("type ", 1)
             path = os.environ.get("PATH", "")
             path_separator = os.pathseppath = os.environ.get("PATH", "")
             path_separator = os.pathsep  
-            for (os.getcwd()) in path.split(path_separator):
+            for (os.cwd()) in path.split(path_separator):
                 full_path = os.path.join(directory, command_name)
                 if os.path.isfile(full_path)
                 found = True
