@@ -66,7 +66,7 @@ def main():
                 except OSError:
                     break
         else:
-            sys.stdout.write(f"{cmd}: command not found\n")
+            print(f"{cmd}: command not found")
 
 
 if __name__ == "__main__":
