@@ -37,6 +37,7 @@ def main():
                         break
 
         elif command not in builtins:
+            found = False
             path = os.environ.get("PATH", "")
             path_separator = os.pathsep
             parts = command.split()
@@ -44,14 +45,17 @@ def main():
             for directory in path.split(path_separator):
                 full_path = os.path.join(directory, command_name)
                 if os.path.isfile(full_path) and os.access(full_path, os.X_OK):
-                found = True
+                    found = True
+                    #break? but idk yet
                 if found:
                     pid = os.fork()
-                    os.execvp(command_name, parts)
-                    os.waitpid(pid, 0)
+                    if pid == 0:
+                        os.execvp(command_name, parts)
+                    else:
+                        os.waitpid(pid, 0)
                 if not found:
                     try:
-                        os._exit(1)
+                        #os._exit(1)? bit idk yet
                     except OSError:
                         break
 
