@@ -38,17 +38,22 @@ def main():
 
         elif command not in builtins:
             found = True
-            command.startswith("type"):
             path = os.environ.get("PATH", "")
             path_separator = os.pathsep
-            args = command.split("type ", 1)
+            args = command.split(1)
             command_name = args[1]
             for directory in path.split(path_separator):
-            full_path = os.path.join(directory, command_name)
+                full_path = os.path.join(directory, command_name)
             if os.path.isfile(full_path) and os.access(full_path, os.X_OK):
-                os.fork()
+                pid = os.fork()
+                command.split = parts
                 os.execvp(command_name, parts)
                 os.waitpid(pid, 0)
+                if not found:
+                    try:
+                        os._exit(1)
+                    except OSError:
+                        break
 
         else:
             print(f"{command}: command not found")
