@@ -95,13 +95,17 @@ def main():
             # 3rd is "1" to only replace the first occurrence.
             #
         try:
-            os.chdir(destination)
+            if destination:
+                os.chdir(destination)
             # chdir stands for CHange DIRectory
+            else:
+                print("cd: path is invalid")
+        # Catches error if folder doesn't exist
         except FileNotFoundError:
             print(f"cd: {destination}: No such file or directory")
         except NotADirectoryError:
             print(f"cd: {destination}: Not a directory")
-            break
+        return
 
 
 if __name__ == "__main__":
