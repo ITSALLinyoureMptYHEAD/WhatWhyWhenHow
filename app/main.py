@@ -96,14 +96,13 @@ def main():
                 # Folder specified? Use that one.
                 destination = parts[1].strip()
             # If the user types "cd /Desktop", this grabs "/Desktop"
-            try:
-                os.chdir(destination)
-            # chdir stands for CHange DIRectory
-            except FileNotFoundError:
-                print(f"cd: {destination}: No such file or directory")
-            except NotADirectoryError:
-                print(f"cd: {destination}: Not a directory")
-        break
+        try:
+            os.chdir(destination)
+        # chdir stands for CHange DIRectory
+        except FileNotFoundError:
+            print(f"cd: {destination}: No such file or directory")
+        except NotADirectoryError:
+            print(f"cd: {destination}: Not a directory")
 
 
 if __name__ == "__main__":
