@@ -65,8 +65,9 @@ def main():
             path_separator = os.pathsep
             for directory in path.split(path_separator):
                 full_path = os.path.join(directory, command_name)
-                if os.path.isfile(full_path)
+                if os.path.isfile(full_path):
                 print(f{full_path})
+                
 
         else:
             print(f"{command}: command not found")
