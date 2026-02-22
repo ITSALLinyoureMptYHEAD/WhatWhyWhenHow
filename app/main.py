@@ -66,8 +66,16 @@ def main():
             for directory in path.split(path_separator):
                 full_path = os.path.join(directory, command_name)
                 if os.path.isfile(full_path):
+                    found = True
+                    break
+            if found:
                 print(f{full_path})
-                
+            if not found:
+                try:
+                    print(f"{args[1]}: not found")
+                except OSError:
+                    break
+
 
         else:
             print(f"{command}: command not found")
