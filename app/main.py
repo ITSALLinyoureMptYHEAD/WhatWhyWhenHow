@@ -84,7 +84,7 @@ def main():
                 # Folder specified? Use that one.
                 destination = parts[1].strip()
             # If the user types "cd /Desktop", this grabs "/Desktop"
-            else: destination and destination.startswith("~"):
+            if destination and destination.startswith("~"):
                 home = os.environ.get("HOME")
                 # This swaps the ~ for the actual home path (like /home/user)
                 destination = destination.replace("~", home, 1)
