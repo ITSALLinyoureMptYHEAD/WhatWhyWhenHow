@@ -69,7 +69,7 @@ def main():
         elif command == "cd" or command.startswith("cd"):
             parts = command.split(" ", 1)
             # Split the command to see if there's a second part
-                if len(parts) == 1 or parts[1].strip() == "":
+            if len(parts) == 1 or parts[1].strip() == "":
                 #
                 # How .strip() works:
                 # .strip() only removes invisible "whitespace" (like if you accidentally hit the spacebar...
@@ -79,15 +79,15 @@ def main():
                 # It doesn't touch the letters in the middle.
                 #
                 # No folder specified? Go to the HOME directory!
-                    destination = os.environ.get("HOME")
-                else:
+                destination = os.environ.get("HOME")
+            elif:
                 # Folder specified? Use that one.
-                    destination = parts[1].strip()
+                destination = parts[1].strip()
             # If the user types "cd /Desktop", this grabs "/Desktop"
-                if destination and destination.startswith("~"):
-                    home = os.environ.get("HOME")
+            else: destination and destination.startswith("~"):
+                home = os.environ.get("HOME")
                 # This swaps the ~ for the actual home path (like /home/user)
-                    destination = destination.replace("~", home, 1)
+                destination = destination.replace("~", home, 1)
             #
             # How .replace() works:
             # # Use commas to separate arguments: 1st is what to find ("~"),
