@@ -6,7 +6,12 @@ def main():
     while True:
         sys.stdout.write("$ ")
         command = input()
-        builtins = {"echo", "exit", "type", "pwd"}
+        BUILTINS = {
+            "exit": lambda: sys.exit(),
+            "echo": lambda *args: sys.stdout.write(" ".join(args) + "\n"),
+            "type": lambda *args: _get_type(args),
+            "pwd": lambda: sys.stdout.write(os.getcwd() + "\n"),
+        }
         if command == "exit":
             break
         elif command.startswith("echo "):
@@ -21,7 +26,7 @@ def main():
             if args[1] in ("echo", "exit", "type", "pwd"):
                 print(f"{args[1]} is a shell builtin")
                 continue
-            elif command_name not in builtins:
+            elif command_name not in BUILTINS:
                 path = os.environ.get("PATH", "")
                 path_separator = os.pathsep
                 for directory in path.split(path_separator):
@@ -36,7 +41,7 @@ def main():
                     except OSError:
                         break
 
-        elif command not in builtins:
+        elif command not in BUILTINS:
             found = False
             path = os.environ.get("PATH", "")
             path_separator = os.pathsep
