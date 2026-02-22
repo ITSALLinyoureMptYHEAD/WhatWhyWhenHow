@@ -46,14 +46,14 @@ def main():
                 full_path = os.path.join(directory, command_name)
                 if os.path.isfile(full_path) and os.access(full_path, os.X_OK):
                     found = True
-                    #break? but idk yet
-                if found:
+                    break
+            if found:
                     pid = os.fork()
                     if pid == 0:
                         os.execvp(command_name, parts)
                     else:
                         os.waitpid(pid, 0)
-                if not found:
+            if not found:
                     try:
                         #os._exit(1)? bit idk yet
                     except OSError:
