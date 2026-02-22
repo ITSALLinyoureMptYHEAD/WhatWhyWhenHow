@@ -21,7 +21,7 @@ def main():
             if args[1] in ("echo", "exit", "type", "pwd", "cd"):
                 print(f"{args[1]} is a shell builtin")
                 continue
-            else command_name not in builtins:
+            elif command_name not in builtins:
                 path = os.environ.get("PATH", "")
                 path_separator = os.pathsep
                 for directory in path.split(path_separator):
