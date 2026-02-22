@@ -48,16 +48,16 @@ def main():
                     found = True
                     break
             if found:
-                    pid = os.fork()
-                    if pid == 0:
-                        os.execvp(command_name, parts)
-                    else:
-                        os.waitpid(pid, 0)
+                pid = os.fork()
+                if pid == 0:
+                    os.execvp(command_name, parts)
+                else:
+                    os.waitpid(pid, 0)
             if not found:
-                    try:
-                        #os._exit(1)? bit idk yet
-                    except OSError:
-                        break
+                try:
+                    print(f"{command_name}: not found")
+                except OSError:
+                    break
 
         else:
             print(f"{command}: command not found")
