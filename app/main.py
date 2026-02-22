@@ -66,23 +66,44 @@ def main():
             else:
                 print("Error: Could not retrieve directory.")
 
+        elif command == "cd" or command.startswith("cd"):
+            parts = command.split(" ", 1)
+            # Split the command to see if there's a second part
+            if len(parts) == 1 or parts[1].strip() == "":
+                #
+                # How .strip() works:
+                # .strip() only removes invisible "whitespace" (like if you accidentally hit the spacebar...
+                # ...  five times after typing "cow").
+                # Input: "cow   "
+                # Result: "cow"
+                # It doesn't touch the letters in the middle.
+                #
+                # No folder specified? Go to the HOME directory!
+                clean_command = command.strip()
+                parts = clean_command.split(" ", 1)
+                destination = os.environ.get("HOME")
+            elif destination.startswith("~"):
+                home = os.environ.get("HOME")
+                # This swaps the ~ for the actual home path (like /home/user)
+                destination = destination.replace("~", home, 1)
+            #
+            # How .replace() works:
+            # # Use commas to separate arguments: 1st is what to find ("~"),
+            # 2nd is what to replace it with (home),
+            # 3rd is "1" to only replace the first occurrence.
+            #
+            else:
+                # Folder specified? Use that one.
+                destination = parts[1].strip()
+            # If the user types "cd /Desktop", this grabs "/Desktop"
+            try:
+                os.chdir(destination)
+            # chdir stands for CHange DIRectory
+            except FileNotFoundError:
+                print(f"cd: {destination}: No such file or directory")
+            except NotADirectoryError:
+                print(f"cd: {destination}: Not a directory")
 
-        elif command.startswith("cd"):
-            args = command.split("type ", 1)
-            path = os.environ.get("PATH", "")
-            path_separator = os.pathseppath = os.environ.get("PATH", "")
-            path_separator = os.pathsep  
-            for (os.cwd()) in path.split(path_separator):
-                full_path = os.path.join(directory, command_name)
-                if os.path.isfile(full_path)
-                found = True
-                break
-            if found:
-                os.getcwd() from {arg[1]}
-            if not found:
-                try:
-                    print(f"{current_location}: not found")
-                except OSError:
-                    break
+
 if __name__ == "__main__":
     main()
