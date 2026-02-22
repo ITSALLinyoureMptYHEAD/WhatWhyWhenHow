@@ -79,7 +79,13 @@ def main():
                     print(f"{pwd}: not found")
                 except OSError:
                     break
-
+        elif command == ("pwd"):
+            found = True
+            path = os.environ.get("PATH", "")
+            path_separator = os.pathsep
+            parts = command.split(0)
+            command_name = parts[0]
+            print(f"\/app")
         else:
             print(f"{command}: command not found")
 
