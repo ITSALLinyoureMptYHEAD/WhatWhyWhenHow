@@ -63,16 +63,16 @@ def main():
             path = os.environ.get("PATH", "")
             path_separator = os.pathsep
             for directory in path.split(path_separator):
-                    full_path = os.path.join(directory, command_name)
-                    if os.path.isfile(full_path):
-                        print(f"{command_name} is {directory}")
-                        found = True
-                        break
-                if not found:
-                    try:
-                        print(f"{directory}: not found")
-                    except OSError:
-                        break
+                full_path = os.path.join(directory, command_name)
+            if os.path.isfile(full_path):
+                print(f"{command_name} is {directory}")
+                found = True
+                break
+            if not found:
+                try:
+                    print(f"{directory}: not found")
+                except OSError:
+                    break
         else:
             print(f"{command}: command not found")
 
