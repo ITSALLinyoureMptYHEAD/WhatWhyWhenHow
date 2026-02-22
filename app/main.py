@@ -60,7 +60,14 @@ def main():
                     break
 
         elif command == ("pwd"):
-            print(os.getcwd())
+            current_location = os.getcwd()
+            if current_location:
+                print(current_location)
+            else:
+                print("Error: Could not retrieve directory.")
+
+
+#            print(os.getcwd())
 
 
 if __name__ == "__main__":
