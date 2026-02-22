@@ -6,7 +6,7 @@ def main():
     while True:
         sys.stdout.write("$ ")
         command = input()
-        builtins = {"echo", "exit", "type"}
+        builtins = {"echo", "exit", "type", "pwd"}
         if command == "exit":
             break
         elif command.startswith("echo "):
