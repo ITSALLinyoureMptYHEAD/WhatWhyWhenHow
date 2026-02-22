@@ -69,13 +69,12 @@ def main():
                     found = True
                     break
             if found:
-                print(f{full_path})
+                print({full_path})
             if not found:
                 try:
                     print(f"{args[1]}: not found")
                 except OSError:
                     break
-
 
         else:
             print(f"{command}: command not found")
