@@ -60,7 +60,9 @@ def main():
                     break
 
         elif command.startswith("pwd "):
-            args = command.split("pwd ", 1)
+            found = False
+            args = command.split("type ", 1)
+            print_working_directory = args[1]
             path = os.environ.get("PATH", "")
             path_separator = os.pathsep
             for directory in path.split(path_separator):
@@ -72,7 +74,7 @@ def main():
                 print({full_path})
             if not found:
                 try:
-                    print(f"{args[1]}: not found")
+                    print(f"{print_working_directory}: path not found")
                 except OSError:
                     break
 
