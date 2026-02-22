@@ -59,7 +59,14 @@ def main():
                 except OSError:
                     break
 
-        pwd
+        elif command.startswith("pwd "):
+            args = command.split("pwd ", 1)
+            path = os.environ.get("PATH", "")
+            path_separator = os.pathsep
+            for directory in path.split(path_separator):
+                full_path = os.path.join(directory, command_name)
+                if os.path.isfile(full_path)
+                print(f{full_path})
 
         else:
             print(f"{command}: command not found")
