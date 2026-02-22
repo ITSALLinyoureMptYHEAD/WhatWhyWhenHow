@@ -1,6 +1,9 @@
 import sys
 import os
 import subprocess
+import sys
+import os
+import subprocess
 
 BUILTINS = {
     "exit": lambda: sys.exit(),
@@ -40,6 +43,28 @@ def main():
             BUILTINS[first](*rest)
         elif _find_exec_path(first):
             subprocess.run(cmd.split(" "), check=True)
+        elif command not in BUILTINS:
+            found = False
+            path = os.environ.get("PATH", "")
+            path_separator = os.pathsep
+            parts = command.split()
+            command_name = parts[0]
+            for directory in path.split(path_separator):
+                full_path = os.path.join(directory, command_name)
+                if os.path.isfile(full_path) and os.access(full_path, os.X_OK):
+                    found = True
+                    break
+            if found:
+                pid = os.fork()
+                if pid == 0:
+                    os.execvp(command_name, parts)
+                else:
+                    os.waitpid(pid, 0)
+            if not found:
+                try:
+                    print(f"{command_name}: not found")
+                except OSError:
+                    break
         else:
             sys.stdout.write(f"{cmd}: command not found\n")
 
