@@ -98,8 +98,6 @@ def main():
             if destination:
                 os.chdir(destination)
             # chdir stands for CHange DIRectory
-            else:
-                print("cd: path is invalid")
         # Catches error if folder doesn't exist
         except FileNotFoundError:
             print(f"cd: {destination}: No such file or directory")
