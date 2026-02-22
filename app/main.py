@@ -59,6 +59,8 @@ def main():
                 except OSError:
                     break
 
+        pwd
+
         else:
             print(f"{command}: command not found")
 
