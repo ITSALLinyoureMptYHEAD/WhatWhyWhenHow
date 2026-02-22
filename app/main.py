@@ -102,6 +102,7 @@ def main():
             print(f"cd: {destination}: No such file or directory")
         except NotADirectoryError:
             print(f"cd: {destination}: Not a directory")
+        return
 
 
 if __name__ == "__main__":
