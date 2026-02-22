@@ -79,10 +79,12 @@ def main():
                 # It doesn't touch the letters in the middle.
                 #
                 # No folder specified? Go to the HOME directory!
-                clean_command = command.strip()
-                parts = clean_command.split(" ", 1)
                 destination = os.environ.get("HOME")
-            elif destination.startswith("~"):
+            else:
+                # Folder specified? Use that one.
+                destination = parts[1].strip()
+            # If the user types "cd /Desktop", this grabs "/Desktop"
+            if destination and destination.startswith("~"):
                 home = os.environ.get("HOME")
                 # This swaps the ~ for the actual home path (like /home/user)
                 destination = destination.replace("~", home, 1)
@@ -92,13 +94,10 @@ def main():
             # 2nd is what to replace it with (home),
             # 3rd is "1" to only replace the first occurrence.
             #
-            else:
-                # Folder specified? Use that one.
-                destination = parts[1].strip()
-            # If the user types "cd /Desktop", this grabs "/Desktop"
         try:
-            os.chdir(destination)
-        # chdir stands for CHange DIRectory
+            if destination:
+                os.chdir(destination)
+                # chdir stands for CHange DIRectory
         except FileNotFoundError:
             print(f"cd: {destination}: No such file or directory")
         except NotADirectoryError:
