@@ -80,7 +80,7 @@ def main():
                 #
                 # No folder specified? Go to the HOME directory!
                 destination = os.environ.get("HOME")
-            elif:
+            else:
                 # Folder specified? Use that one.
                 destination = parts[1].strip()
             # If the user types "cd /Desktop", this grabs "/Desktop"
