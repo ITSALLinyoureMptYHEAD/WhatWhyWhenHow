@@ -60,32 +60,19 @@ def main():
                     break
 
         elif command.startswith("pwd "):
-            found = False
             path = os.environ.get("PATH", "")
             path_separator = os.pathsep
-            parts = command.split(
-                0,
-            )
-            command_name = parts[0]
             for directory in path.split(path_separator):
-                full_path = os.path.join(directory, command_name)
-                if os.path.isfile(full_path):
-                    found = True
-                    break
-            if found:
-                print(f"{1, 2, } is {full_path}")
-            if not found:
-                try:
-                    print(f"{pwd}: not found")
-                except OSError:
-                    break
-        elif command == ("pwd"):
-            found = True
-            path = os.environ.get("PATH", "")
-            path_separator = os.pathsep
-            parts = command.split(0)
-            command_name = parts[0]
-            print(f"\\/app")
+                    full_path = os.path.join(directory, command_name)
+                    if os.path.isfile(full_path):
+                        print(f"{command_name} is {directory}")
+                        found = True
+                        break
+                if not found:
+                    try:
+                        print(f"{directory}: not found")
+                    except OSError:
+                        break
         else:
             print(f"{command}: command not found")
 
