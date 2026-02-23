@@ -83,7 +83,9 @@ def main():
             found = False
             path = os.environ.get("PATH", "")
             path_separator = os.pathsep
-            parts = command.split()
+            # old code: 'parts = command.split()' , new code:
+            parts = parse_arguments(command)
+            #
             command_name = parts[0]
             for directory in path.split(path_separator):
                 full_path = os.path.join(directory, command_name)
