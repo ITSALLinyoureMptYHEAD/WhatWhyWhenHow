@@ -10,7 +10,7 @@ import os
 def parse_arguments(command):
     args = []
     current_arg = ""
-    #"""switches""" eg. b_l_a_h = False
+    # """switches""" eg. b_l_a_h = False
     in_single_quotes = False
     in_double_quotes = False
     escape_next = False
@@ -33,7 +33,7 @@ def parse_arguments(command):
                 args.append(current_arg)
                 current_arg = ""
         # Normal letters (or spaces/quotes trapped inside the other quote type)
-        elif char "\\" and not in_single_quotes and not in_double_quotes:
+        elif char == "\\" and not in_single_quotes and not in_double_quotes:
             escape_next = True
         else:
             # Add any other character (or spaces inside quotes) to the argument
