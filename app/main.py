@@ -99,6 +99,8 @@ def main():
                 if destination:
                     os.chdir(destination)
             # chdir stands for CHange DIRectory
+            # what about ../ you ask? yeah it(os.chdir) handles the parents dir
+            # (one before the one we are in rn)
             except FileNotFoundError:
                 print(f"cd: {destination}: No such file or directory")
             except NotADirectoryError:
