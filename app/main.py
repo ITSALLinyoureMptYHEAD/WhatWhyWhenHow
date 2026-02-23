@@ -28,6 +28,10 @@ def parse_arguments(command):
             # A space outside of quotes means the argument is complete
             in_double_quotes = not in_double_quotes
         # Check for space (ONLY if BOTH switches are off)
+        #
+        # A single = is a command: "Make the thing on the left equal to the thing on the right."
+        # A double == is a question: "Are these two things exactly the same?"
+        #
         elif char == " " and not in_single_quotes and not in_double_quotes:
             if current_arg:
                 args.append(current_arg)
