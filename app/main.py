@@ -16,6 +16,8 @@ def parse_arguments(command):
     escape_next = False
     for char in command:
         if escape_next:
+            if in_double_quotes and char not in ['"', "\\", "$", "`", "\n"]:
+                current_arg += "\\"
             current_arg += char
             escape_next = False
             continue
@@ -37,7 +39,7 @@ def parse_arguments(command):
                 args.append(current_arg)
                 current_arg = ""
         # Normal letters (or spaces/quotes trapped inside the other quote type)
-        elif char == "\\" and not in_single_quotes and not in_double_quotes:
+        elif char == "\\" and not in_single_quotes:
             escape_next = True
         else:
             # Add any other character (or spaces inside quotes) to the argument
