@@ -105,11 +105,12 @@ def main():
                 print(f"cd: {destination}: No such file or directory")
             except NotADirectoryError:
                 print(f"cd: {destination}: Not a directory")
-#
-#import shlex
-#args = shlex.split(command)
-# This automatically handles single quotes, double quotes, and escaped characters
-#
+
+        #
+        # import shlex
+        # args = shlex.split(command)
+        # This automatically handles single quotes, double quotes, and escaped characters
+        #
         def parse_arguments(command):
             args = []
             current_arg = ""
@@ -125,23 +126,24 @@ def main():
                         current_arg = ""
                 else:
                     # Add any other character (or spaces inside quotes) to the argument
-#now we do current_arg = current_arg + char
-#
-#Imagine you have a piece of paper.
-#   Without +=:
-#You take a new blank paper. You look at your old paper (which says "ec"), copy "ec" onto the new paper,
-#  and then write "h" at the end. Then you throw away the old paper.
-#current_arg = current_arg + char
-#   With +=:
-#You just take your pen and write "h" at the end of the paper you already have.
-#current_arg += char
-#It is just a shortcut that means "stick this onto the end of what is already there."
-#                    current_arg += char
-#
-# Add the final argument after the loop finishes
+                    # now we do current_arg = current_arg + char, but faster
+                    current_arg += char
+            #
+            # Imagine you have a piece of paper.
+            #   Without +=:
+            # You take a new blank paper. You look at your old paper (which says "ec"), copy "ec" onto the new paper,
+            #  and then write "h" at the end. Then you throw away the old paper.
+            # current_arg = current_arg + char
+            #   With +=:
+            # You just take your pen and write "h" at the end of the paper you already have.
+            # current_arg += char
+            # It is just a shortcut that means "stick this onto the end of what is already there."
+            #
+            # Add the final argument after the loop finishes
             if current_arg:
                 args.append(current_arg)
             return args
-        
+
+
 if __name__ == "__main__":
     main()
