@@ -20,9 +20,7 @@ def parse_arguments(command):
         # Check for double quote (ONLY if we aren't inside single quotes)
         elif char == '"' and not in_single_quotes:
             # A space outside of quotes means the argument is complete
-            if current_arg:
-                args.append(current_arg)
-                current_arg = ""
+            in_double_quotes = not in_double_quotes
         # Check for space (ONLY if BOTH switches are off)
         elif char == " " and not in_single_quotes and not in_double_quotes:
             if current_arg:
