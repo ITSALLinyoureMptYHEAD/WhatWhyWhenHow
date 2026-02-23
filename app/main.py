@@ -11,15 +11,24 @@ def parse_arguments(command):
     args = []
     current_arg = ""
     in_single_quotes = False
+    in_double_quotes = False
     for char in command:
-        if char == "'":
+        # Check for single quote (ONLY if we aren't inside double quotes)
+        if char == "'" and not in_double_quotes:
             # Toggle the quote state; do not add the quote character itself
             in_single_quotes = not in_single_quotes
-        elif char == " " and not in_single_quotes:
+        # Check for double quote (ONLY if we aren't inside single quotes)
+        elif char == '"' and not in_single_quotes:
             # A space outside of quotes means the argument is complete
             if current_arg:
                 args.append(current_arg)
                 current_arg = ""
+        # Check for space (ONLY if BOTH switches are off)
+        elif char == " " and not in_single_quotes and not in_double_quotes:
+            if current_arg:
+                args.append(current_arg)
+                current_arg = ""
+        # Normal letters (or spaces/quotes trapped inside the other quote type)
         else:
             # Add any other character (or spaces inside quotes) to the argument
             # now we do current_arg = current_arg + char, but faster
