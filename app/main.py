@@ -151,7 +151,7 @@ def main():
                         #  but other users can only read it."
                         os.dup2(fd, sys.stdout.fileno())
                         os.close(fd)
-                        os.execvp(command_name, parts)
+                    os.execvp(command_name, parts)
                 else:
                     os.waitpid(pid, 0)
             if not found:
