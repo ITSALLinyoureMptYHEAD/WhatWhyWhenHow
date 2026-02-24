@@ -98,20 +98,30 @@ def get_input(builtins):
 
                 matches = sorted(list(matches))
 
-                # SCENARIO A: Exactly one match -> Complete it with a space
+                # SCENARIO A: Exactly one match -> Complete it + one space
                 if len(matches) == 1:
                     remainder = matches[0][len(command) :]
                     sys.stdout.write(remainder + " ")
                     command += remainder + " "
 
-                # SCENARIO B: Multiple matches -> Print them and restart the prompt
+                # SCENARIO B: Multiple matches
                 elif len(matches) > 1:
-                    # Find common prefix (optional but good for 'Partial completions' stage)
-                    # For now, just print the matches as required by the tester
-                    sys.stdout.write("\r\n" + "  ".join(matches) + "\r\n")
-                    sys.stdout.write("$ " + command)
+                    # Find the longest common part they all share
+                    common = os.path.commonprefix(matches)
 
-                # SCENARIO C: No matches -> Just ring the bell
+                    if len(common) > len(command):
+                        # If they share a common start (like 'my_command_v1' and 'my_command_v2')
+                        # only fill in the 'my_command_' part and don't add a space yet.
+                        remainder = common[len(command) :]
+                        sys.stdout.write(remainder)
+                        command += remainder
+                    else:
+                        # If no more common letters, print the list and ring the bell
+                        sys.stdout.write("\a")
+                        sys.stdout.write("\r\n" + "  ".join(matches) + "\r\n")
+                        sys.stdout.write("$ " + command)
+
+                # SCENARIO C: No matches
                 else:
                     sys.stdout.write("\a")
 
