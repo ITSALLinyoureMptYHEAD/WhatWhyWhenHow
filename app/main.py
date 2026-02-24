@@ -79,7 +79,7 @@ def main():
                 # idx -> index, exact position where that symbol is sitting (like spot #2)
                 idx = args.index(op)
                 file_path = args[idx + 1]
-                output = " ".join(args[:idx])
+                output = " ".join(args[1:idx])
                 with open(file_path, "w") as f:
                     f.write(output + "\n")
             else:
