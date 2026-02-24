@@ -62,6 +62,14 @@ def parse_arguments(command):
     return args
 
 
+def redirect_to_file(text):
+    original = sys.stdout
+    sys.stdout = open("/path/to/redirect.txt", "w")
+    print("This is your redirected text:")
+    print(text)
+    sys.stdout = original
+
+
 def main():
     while True:
         sys.stdout.write("$ ")
