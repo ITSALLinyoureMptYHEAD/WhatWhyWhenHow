@@ -72,8 +72,13 @@ def main():
         elif command.startswith("echo "):
             # Parse the command using your new function
             args = parse_arguments(command)
+            if "2>" in args:
+                idx = args.index("2>")
+                with open(args[idx + 1], "w"):
+                    pass  # echo has no errors, but we must create the empty file
+                args = args[:idx]
             # Join everything after the word "echo" (which is args[0]) with a space
-            if ">" in args or "1>" in args:
+            elif ">" in args or "1>" in args:
                 # op -> operator, to remember which exact symbol is used (either > or 1>)
                 op = ">" if ">" in args else "1>"
                 # idx -> index, exact position where that symbol is sitting (like spot #2)
