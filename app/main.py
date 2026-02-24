@@ -78,7 +78,7 @@ def main():
                     pass  # echo has no errors, but we must create the empty file
                 args = args[:idx]
             # Join everything after the word "echo" (which is args[0]) with a space
-            elif ">" in args or "1>" in args:
+            if ">" in args or "1>" in args:
                 # op -> operator, to remember which exact symbol is used (either > or 1>)
                 op = ">" if ">" in args else "1>"
                 # idx -> index, exact position where that symbol is sitting (like spot #2)
