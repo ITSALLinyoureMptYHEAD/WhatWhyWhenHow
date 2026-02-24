@@ -1,5 +1,7 @@
 import sys
 import os
+import termios
+import tty
 
 
 #
@@ -62,11 +64,56 @@ def parse_arguments(command):
     return args
 
 
+def get_input(builtins):
+    command = ""
+    old_settings = termios.tcgetattr(sys.stdin)
+    tty.setraw(sys.stdin)
+
+    try:
+        while True:
+            char = sys.stdin.read(1)
+
+            # Enter key
+            if char in ("\n", "\r"):
+                sys.stdout.write("\r\n")
+                return command
+
+            # Tab key (Autocompletion)
+            elif char == "\t":
+                matches = [b for b in builtins if b.startswith(command)]
+                if len(matches) == 1:
+                    remainder = matches[0][len(command) :]
+                    sys.stdout.write(remainder + " ")
+                    command += remainder + " "
+                else:
+                    sys.stdout.write("\a")  # Ring the terminal bell
+
+            # Backspace key
+            elif char == "\x7f":
+                if len(command) > 0:
+                    command = command[:-1]
+                    sys.stdout.write("\b \b")
+
+            # Ctrl+C to exit safely
+            elif char == "\x03":
+                sys.exit(0)
+
+            # Normal typing
+            else:
+                sys.stdout.write(char)
+                command += char
+
+            sys.stdout.flush()
+    finally:
+        termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
+
+
 def main():
     while True:
         sys.stdout.write("$ ")
-        command = input()
-        builtins = {"echo", "exit", "type", "pwd", "cd"}
+        sys.stdout.flush()
+        builtins = ["echo", "exit", "type", "pwd", "cd"]
+        command = get_input(builtins)
         if command == "exit":
             break
         elif command.startswith("echo "):
