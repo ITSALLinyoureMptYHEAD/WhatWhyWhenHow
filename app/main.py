@@ -127,14 +127,6 @@ def get_input(builtins):
 
                 matches = list(matches)
 
-                # Complete if exactly one match is found
-                if len(matches) == 1:
-                    remainder = matches[0][len(command) :]
-                    sys.stdout.write(remainder + " ")
-                    command += remainder + " "
-                else:
-                    sys.stdout.write("\a")  # Ring the terminal bell
-
             # Backspace key
             elif char == "\x7f":
                 if len(command) > 0:
