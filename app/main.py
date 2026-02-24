@@ -68,6 +68,7 @@ def redirect_to_file(text):
     print("This is your redirected text:")
     print(text)
     sys.stdout = original
+    return
 
 
 def main():
