@@ -178,13 +178,13 @@ def main():
         sys.stdout.flush()
         builtins = ["echo", "exit", "type", "pwd", "cd"]
         command = get_input(builtins)
-        if not command_line:
+        if not command:
             continue
-        if command_line == "exit":
+        if command == "exit":
             break
 
         # Split the line by pipes
-        commands = command_line.split("|")
+        commands = command.split("|")
         prev_pipe_read = None
         pids = []
 
@@ -211,7 +211,7 @@ def main():
                     os.close(curr_pipe_read)
 
                 # Now run the actual command logic
-                execute_command(cmd_str, builtins_list)
+                execute_command(cmd_str, builtins)
                 os._exit(0)
             else:
                 # PARENT PROCESS
