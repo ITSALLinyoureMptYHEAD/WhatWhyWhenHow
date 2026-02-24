@@ -72,24 +72,29 @@ def main():
         elif command.startswith("echo "):
             # Parse the command using your new function
             args = parse_arguments(command)
-            if "2>" in args:
+            if "2>>" in args:
+                idx = args.index("2>>")
+                with open(args[idx + 1], "a"):
+                    pass
+                args = args[:idx]
+            elif "2>" in args:
                 idx = args.index("2>")
                 with open(args[idx + 1], "w"):
-                    pass  # echo has no errors, but we must create the empty file
+                    pass
                 args = args[:idx]
-            # Join everything after the word "echo" (which is args[0]) with a space
-            if ">" in args or "1>" in args:
-                # op -> operator, to remember which exact symbol is used (either > or 1>)
-                op = ">" if ">" in args else "1>"
-                # idx -> index, exact position where that symbol is sitting (like spot #2)
+
+            if ">>" in args or "1>>" in args:
+                op = ">>" if ">>" in args else "1>>"
                 idx = args.index(op)
-                file_path = args[idx + 1]
-                output = " ".join(args[1:idx])
-                with open(file_path, "w") as f:
-                    f.write(output + "\n")
+                with open(args[idx + 1], "a") as f:
+                    f.write(" ".join(args[1:idx]) + "\n")
+            elif ">" in args or "1>" in args:
+                op = ">" if ">" in args else "1>"
+                idx = args.index(op)
+                with open(args[idx + 1], "w") as f:
+                    f.write(" ".join(args[1:idx]) + "\n")
             else:
-                output = " ".join(args[1:])
-                print(output)
+                print(" ".join(args[1:]))
         elif command == "echo":
             print("")
         elif command.startswith("type"):
@@ -124,9 +129,24 @@ def main():
             #
             redirect_out = None
             redirect_err = None
-            if "2>" in parts:
+            append_out = False
+            append_err = False
+
+            if "2>>" in parts:
+                idx = parts.index("2>>")
+                redirect_err = parts[idx + 1]
+                append_err = True
+                parts = parts[:idx]
+            elif "2>" in parts:
                 idx = parts.index("2>")
                 redirect_err = parts[idx + 1]
+                parts = parts[:idx]
+
+            if ">>" in parts or "1>>" in parts:
+                op = ">>" if ">>" in parts else "1>>"
+                idx = parts.index(op)
+                redirect_out = parts[idx + 1]
+                append_out = True
                 parts = parts[:idx]
             elif ">" in parts or "1>" in parts:
                 op = ">" if ">" in parts else "1>"
@@ -148,15 +168,21 @@ def main():
                     # Then, it uses os.execvp to replace its own brain with the command you typed
                     #  (like cat or ls) and runs it.
                     if redirect_out:
-                        fd = os.open(
-                            redirect_out, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o644
+                        flags = (
+                            os.O_WRONLY
+                            | os.O_CREAT
+                            | (os.O_APPEND if append_out else os.O_TRUNC)
                         )
+                        fd = os.open(redirect_out, flags, 0o644)
                         os.dup2(fd, sys.stdout.fileno())
                         os.close(fd)
                     if redirect_err:
-                        fd = os.open(
-                            redirect_err, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o644
+                        flags = (
+                            os.O_WRONLY
+                            | os.O_CREAT
+                            | (os.O_APPEND if append_err else os.O_TRUNC)
                         )
+                        fd = os.open(redirect_err, flags, 0o644)
                         os.dup2(fd, sys.stderr.fileno())
                         os.close(fd)
                     os.execvp(command_name, parts)
