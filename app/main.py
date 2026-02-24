@@ -78,12 +78,9 @@ def get_input(builtins):
                 sys.stdout.write("\r\n")
                 return command
 
-            # Tab key (Autocompletion)
             elif char == "\t":
-                # Search builtins
+                # Gather all possible matches
                 matches = set([b for b in builtins if b.startswith(command)])
-
-                # Search PATH for executables
                 path_env = os.environ.get("PATH", "")
                 if path_env:
                     for directory in path_env.split(os.pathsep):
@@ -98,6 +95,25 @@ def get_input(builtins):
                                             matches.add(filename)
                             except OSError:
                                 continue
+
+                matches = sorted(list(matches))
+
+                # SCENARIO A: Exactly one match -> Complete it with a space
+                if len(matches) == 1:
+                    remainder = matches[0][len(command) :]
+                    sys.stdout.write(remainder + " ")
+                    command += remainder + " "
+
+                # SCENARIO B: Multiple matches -> Print them and restart the prompt
+                elif len(matches) > 1:
+                    # Find common prefix (optional but good for 'Partial completions' stage)
+                    # For now, just print the matches as required by the tester
+                    sys.stdout.write("\r\n" + "  ".join(matches) + "\r\n")
+                    sys.stdout.write("$ " + command)
+
+                # SCENARIO C: No matches -> Just ring the bell
+                else:
+                    sys.stdout.write("\a")
 
                 matches = list(matches)
 
