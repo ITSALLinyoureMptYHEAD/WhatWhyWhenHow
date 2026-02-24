@@ -83,6 +83,18 @@ def execute_command(args):
         print(f"{args[0]}: command not found")
 
 
+def get_lcp(matches):
+    if not matches:
+        return ""
+    # Sort them and compare the first and last
+    matches.sort()
+    s1, s2 = matches[0], matches[-1]
+    for i, c in enumerate(s1):
+        if i >= len(s2) or c != s2[i]:
+            return s1[:i]
+    return s1
+
+
 def main():
     while True:
         sys.stdout.write("$ ")
