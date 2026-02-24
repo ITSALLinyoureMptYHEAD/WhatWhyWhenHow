@@ -62,15 +62,6 @@ def parse_arguments(command):
     return args
 
 
-def redirect_to_file(text):
-    original = sys.stdout
-    sys.stdout = open("/path/to/redirect.txt", "w")
-    print("This is your redirected text:")
-    print(text)
-    sys.stdout = original
-    return
-
-
 def main():
     while True:
         sys.stdout.write("$ ")
@@ -82,8 +73,18 @@ def main():
             # Parse the command using your new function
             args = parse_arguments(command)
             # Join everything after the word "echo" (which is args[0]) with a space
-            output = " ".join(args[1:])
-            print(output)
+            if ">" in args or "1>" in args:
+                # op -> operator, to remember which exact symbol is used (either > or 1>)
+                op = ">" if ">" in args else "1>"
+                # idx -> index, exact position where that symbol is sitting (like spot #2)
+                idx = args.index(op)
+                file_path = args[idx + 1]
+                output = " ".join(args[:idx])
+                with open(file_path, "w") as f:
+                    f.write(output + "\n")
+            else:
+                output = " ".join(args[1:])
+                print(output)
         elif command == "echo":
             print("")
         elif command.startswith("type"):
@@ -116,6 +117,13 @@ def main():
             # old code: 'parts = command.split()' , new code:
             parts = parse_arguments(command)
             #
+            redirect_file = None
+            if ">" in parts or "1>" in parts:
+                op = ">" if ">" in parts else "1>"
+                idx = parts.index(op)
+                redirect_file = parts[idx + 1]
+                parts = parts[:idx]
+            #
             command_name = parts[0]
             for directory in path.split(path_separator):
                 full_path = os.path.join(directory, command_name)
@@ -124,8 +132,26 @@ def main():
                     break
             if found:
                 pid = os.fork()
+                # The child/this is the clone:
                 if pid == 0:
-                    os.execvp(command_name, parts)
+                    # If you typed >, it opens the text file and hooks up the output pipe to it (os.dup2).
+                    # Then, it uses os.execvp to replace its own brain with the command you typed
+                    #  (like cat or ls) and runs it.
+                    if redirect_file:
+                        fd = os.open(
+                            redirect_file, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o644
+                        )
+                        #
+                        # translation:
+                        # os.O_WRONLY: Open the file for WRiting ONLY (no reading).
+                        # |: The glue that mixes these rules together.
+                        # os.O_CREAT: If the file does not exist yet, CREATe it.
+                        # os.O_TRUNC: If the file already has text inside, TRUNCate (erase) it completely before starting to write.
+                        # 0o644: The security permissions. It just means "I can read and write to this file,
+                        #  but other users can only read it."
+                        os.dup2(fd, sys.stdout.fileno())
+                        os.close(fd)
+                        os.execvp(command_name, parts)
                 else:
                     os.waitpid(pid, 0)
             if not found:
