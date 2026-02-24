@@ -146,89 +146,86 @@ def get_input(builtins):
     finally:
         termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
 
-
-def execute_command(command_str, builtins):
-    # This is my existing logic, just moved into a function
+def execute_command(command_str, builtins_list):
     args = parse_arguments(command_str)
     if not args:
         return
 
     cmd_name = args[0]
 
-    # Handle File Redirections (Existing logic for >, >>, 2>, etc.)
-    # [Insert my existing redirection/parsing logic here to set redirect_out/err]
+    # Handle Redirection within the child process
+    redirect_out = None
+    if ">" in args:
+        idx = args.index(">")
+        redirect_out = args[idx + 1]
+        args = args[:idx]
+    elif ">>" in args:
+        idx = args.index(">>")
+        # Handle append logic here
+        pass
 
-    # Run the command
     if cmd_name == "echo":
-        # ... my echo logic ...
+        print(" ".join(args[1:]))
+    elif cmd_name == "pwd":
+        print(os.getcwd())
+    elif cmd_name in builtins_list:
+        # Call your other builtin logic functions here
         pass
-    elif cmd_name == "cd":
-        # ... my cd logic ...
-        pass
-    # ... handle other builtins ...
     else:
-        # It's an external command
-        # Use my existing PATH search and os.execvp logic
-        pass
-
+        # External commands (cat, wc, etc.)
+        try:
+            os.execvp(cmd_name, args)
+        except FileNotFoundError:
+            sys.stderr.write(f"{cmd_name}: command not found\n")
+            os._exit(1)
 
 def main():
     while True:
         sys.stdout.write("$ ")
         sys.stdout.flush()
-        builtins = ["echo", "exit", "type", "pwd", "cd"]
-        command = get_input(builtins)
+        
+        builtins_list = ["echo", "exit", "type", "pwd", "cd"]
+        command = get_input(builtins_list)
+        
         if not command:
             continue
-        if command == "exit":
+        if command.strip() == "exit":
             break
 
-        # Split the line by pipes
         commands = command.split("|")
         prev_pipe_read = None
         pids = []
 
         for i, cmd_str in enumerate(commands):
             cmd_str = cmd_str.strip()
-
-            # Create a pipe if this isn't the last command
             curr_pipe_read, curr_pipe_write = None, None
+            
             if i < len(commands) - 1:
                 curr_pipe_read, curr_pipe_write = os.pipe()
 
             pid = os.fork()
             if pid == 0:
-                # CHILD PROCESS
-                # If there's a pipe from the PREVIOUS command, hook it to STDIN
                 if prev_pipe_read is not None:
                     os.dup2(prev_pipe_read, 0)
                     os.close(prev_pipe_read)
-
-                # If there's a pipe to the NEXT command, hook it to STDOUT
                 if curr_pipe_write is not None:
                     os.dup2(curr_pipe_write, 1)
                     os.close(curr_pipe_write)
                     os.close(curr_pipe_read)
-
-                # Now run the actual command logic
-                execute_command(cmd_str, builtins)
+                
+                # THIS IS THE KEY: Run the logic here, then exit the child
+                execute_command(cmd_str, builtins_list)
                 os._exit(0)
             else:
-                # PARENT PROCESS
                 pids.append(pid)
-                # Close ends we no longer need in the parent
                 if prev_pipe_read is not None:
                     os.close(prev_pipe_read)
                 if curr_pipe_write is not None:
                     os.close(curr_pipe_write)
-                # Keep the read end for the next command in the loop
                 prev_pipe_read = curr_pipe_read
 
-        # Wait for ALL programs in the pipeline to finish
         for p in pids:
             os.waitpid(p, 0)
-        if command == "exit":
-            break
         elif command.startswith("echo "):
             # Parse the command using your new function
             args = parse_arguments(command)
