@@ -146,6 +146,7 @@ def get_input(builtins):
     finally:
         termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
 
+
 def execute_command(command_str, builtins_list):
     args = parse_arguments(command_str)
     if not args:
@@ -153,45 +154,39 @@ def execute_command(command_str, builtins_list):
 
     cmd_name = args[0]
 
-    # Handle Redirection within the child process
-    redirect_out = None
-    if ">" in args:
-        idx = args.index(">")
-        redirect_out = args[idx + 1]
-        args = args[:idx]
-    elif ">>" in args:
-        idx = args.index(">>")
-        # Handle append logic here
-        pass
-
+    # MOVE ALL YOUR LOGIC HERE
     if cmd_name == "echo":
+        # Handle echo logic/redirection here...
         print(" ".join(args[1:]))
     elif cmd_name == "pwd":
         print(os.getcwd())
-    elif cmd_name in builtins_list:
-        # Call your other builtin logic functions here
+    elif cmd_name == "type":
+        # Handle type logic...
         pass
     else:
         # External commands (cat, wc, etc.)
         try:
             os.execvp(cmd_name, args)
-        except FileNotFoundError:
-            sys.stderr.write(f"{cmd_name}: command not found\n")
+        except Exception:
+            sys.stderr.write(f"{cmd_name}: not found\n")
             os._exit(1)
 
+
 def main():
+    builtins_list = ["echo", "exit", "type", "pwd", "cd"]
+
     while True:
         sys.stdout.write("$ ")
         sys.stdout.flush()
-        
-        builtins_list = ["echo", "exit", "type", "pwd", "cd"]
+
         command = get_input(builtins_list)
-        
-        if not command:
+
+        if not command or command.strip() == "":
             continue
         if command.strip() == "exit":
             break
 
+        # Handle Pipes
         commands = command.split("|")
         prev_pipe_read = None
         pids = []
@@ -199,12 +194,13 @@ def main():
         for i, cmd_str in enumerate(commands):
             cmd_str = cmd_str.strip()
             curr_pipe_read, curr_pipe_write = None, None
-            
+
             if i < len(commands) - 1:
                 curr_pipe_read, curr_pipe_write = os.pipe()
 
             pid = os.fork()
             if pid == 0:
+                # CHILD PROCESS: Setup pipes then execute
                 if prev_pipe_read is not None:
                     os.dup2(prev_pipe_read, 0)
                     os.close(prev_pipe_read)
@@ -212,11 +208,11 @@ def main():
                     os.dup2(curr_pipe_write, 1)
                     os.close(curr_pipe_write)
                     os.close(curr_pipe_read)
-                
-                # THIS IS THE KEY: Run the logic here, then exit the child
+
                 execute_command(cmd_str, builtins_list)
                 os._exit(0)
             else:
+                # PARENT PROCESS
                 pids.append(pid)
                 if prev_pipe_read is not None:
                     os.close(prev_pipe_read)
@@ -224,187 +220,9 @@ def main():
                     os.close(curr_pipe_write)
                 prev_pipe_read = curr_pipe_read
 
+        # Wait for all processes in the pipe chain to finish
         for p in pids:
             os.waitpid(p, 0)
-        elif command.startswith("echo "):
-            # Parse the command using your new function
-            args = parse_arguments(command)
-            if "2>>" in args:
-                idx = args.index("2>>")
-                with open(args[idx + 1], "a"):
-                    pass
-                args = args[:idx]
-            elif "2>" in args:
-                idx = args.index("2>")
-                with open(args[idx + 1], "w"):
-                    pass
-                args = args[:idx]
-
-            if ">>" in args or "1>>" in args:
-                op = ">>" if ">>" in args else "1>>"
-                idx = args.index(op)
-                with open(args[idx + 1], "a") as f:
-                    f.write(" ".join(args[1:idx]) + "\n")
-            elif ">" in args or "1>" in args:
-                op = ">" if ">" in args else "1>"
-                idx = args.index(op)
-                with open(args[idx + 1], "w") as f:
-                    f.write(" ".join(args[1:idx]) + "\n")
-            else:
-                print(" ".join(args[1:]))
-        elif command == "echo":
-            print("")
-        elif command.startswith("type"):
-            found = False
-            args = command.split("type ", 1)
-            command_name = args[1]
-            if args[1] in ("echo", "exit", "type", "pwd", "cd"):
-                print(f"{args[1]} is a shell builtin")
-                continue
-            elif command_name not in builtins:
-                path = os.environ.get("PATH", "")
-                path_separator = os.pathsep
-                for directory in path.split(path_separator):
-                    full_path = os.path.join(directory, command_name)
-                    if os.path.isfile(full_path) and os.access(full_path, os.X_OK):
-                        print(f"{command_name} is {full_path}")
-                        found = True
-                        break
-
-                if not found:
-                    try:
-                        print(f"{command_name}: not found")
-                    except OSError:
-                        break
-
-        elif command.split()[0] not in builtins:
-            found = False
-            path = os.environ.get("PATH", "")
-            path_separator = os.pathsep
-            # old code: 'parts = command.split()' , new code:
-            parts = parse_arguments(command)
-            #
-            redirect_out = None
-            redirect_err = None
-            append_out = False
-            append_err = False
-
-            if "2>>" in parts:
-                idx = parts.index("2>>")
-                redirect_err = parts[idx + 1]
-                append_err = True
-                parts = parts[:idx]
-            elif "2>" in parts:
-                idx = parts.index("2>")
-                redirect_err = parts[idx + 1]
-                parts = parts[:idx]
-
-            if ">>" in parts or "1>>" in parts:
-                op = ">>" if ">>" in parts else "1>>"
-                idx = parts.index(op)
-                redirect_out = parts[idx + 1]
-                append_out = True
-                parts = parts[:idx]
-            elif ">" in parts or "1>" in parts:
-                op = ">" if ">" in parts else "1>"
-                idx = parts.index(op)
-                redirect_out = parts[idx + 1]
-                parts = parts[:idx]
-            #
-            command_name = parts[0]
-            for directory in path.split(path_separator):
-                full_path = os.path.join(directory, command_name)
-                if os.path.isfile(full_path) and os.access(full_path, os.X_OK):
-                    found = True
-                    break
-            if found:
-                pid = os.fork()
-                # The child/this is the clone:
-                if pid == 0:
-                    # If you typed >, it opens the text file and hooks up the output pipe to it (os.dup2).
-                    # Then, it uses os.execvp to replace its own brain with the command you typed
-                    #  (like cat or ls) and runs it.
-                    if redirect_out:
-                        flags = (
-                            os.O_WRONLY
-                            | os.O_CREAT
-                            | (os.O_APPEND if append_out else os.O_TRUNC)
-                        )
-                        fd = os.open(redirect_out, flags, 0o644)
-                        os.dup2(fd, sys.stdout.fileno())
-                        os.close(fd)
-                    if redirect_err:
-                        flags = (
-                            os.O_WRONLY
-                            | os.O_CREAT
-                            | (os.O_APPEND if append_err else os.O_TRUNC)
-                        )
-                        fd = os.open(redirect_err, flags, 0o644)
-                        os.dup2(fd, sys.stderr.fileno())
-                        os.close(fd)
-                    os.execvp(command_name, parts)
-                    #
-                    # translation:
-                    # os.O_WRONLY: Open the file for WRiting ONLY (no reading).
-                    # |: The glue that mixes these rules together.
-                    # os.O_CREAT: If the file does not exist yet, CREATe it.
-                    # os.O_TRUNC: If the file already has text inside, TRUNCate (erase) it completely before starting to write.
-                    # 0o644: The security permissions. It just means "I can read and write to this file,
-                    #  but other users can only read it."
-
-                else:
-                    os.waitpid(pid, 0)
-            if not found:
-                try:
-                    print(f"{command_name}: not found")
-                except OSError:
-                    break
-
-        elif command == ("pwd"):
-            current_location = os.getcwd()
-            if current_location:
-                print(current_location)
-            else:
-                print("Error: Could not retrieve directory.")
-
-        elif command == "cd" or command.startswith("cd"):
-            parts = command.split(" ", 1)
-            # Split the command to see if there's a second part
-            if len(parts) == 1 or parts[1].strip() == "":
-                #
-                # How .strip() works:
-                # .strip() only removes invisible "whitespace" (like if you accidentally hit the spacebar...
-                # ...  five times after typing "cow").
-                # Input: "cow   "
-                # Result: "cow"
-                # It doesn't touch the letters in the middle.
-                #
-                # No folder specified? Go to the HOME directory!
-                destination = os.environ.get("HOME")
-            else:
-                # Folder specified? Use that one.
-                destination = parts[1].strip()
-            # If the user types "cd /Desktop", this grabs "/Desktop"
-            if destination and destination.startswith("~"):
-                home = os.environ.get("HOME")
-                # This swaps the ~ for the actual home path (like /home/user)
-                destination = destination.replace("~", home, 1)
-            #
-            # How .replace() works:
-            # # Use commas to separate arguments: 1st is what to find ("~"),
-            # 2nd is what to replace it with (home),
-            # 3rd is "1" to only replace the first occurrence.
-            #
-            try:
-                if destination:
-                    os.chdir(destination)
-            # chdir stands for CHange DIRectory
-            # what about ../ you ask? yeah it(os.chdir) handles the parents dir
-            # (one before the one we are in rn)
-            except FileNotFoundError:
-                print(f"cd: {destination}: No such file or directory")
-            except NotADirectoryError:
-                print(f"cd: {destination}: Not a directory")
 
 
 if __name__ == "__main__":
