@@ -118,10 +118,14 @@ def main():
             parts = parse_arguments(command)
             #
             redirect_file = None
-            if ">" in parts or "1>" in parts:
+            if "2>" in parts:
+                idx = parts.index("2>")
+                redirect_err = parts[idx + 1]
+                parts = parts[:idx]
+            elif ">" in parts or "1>" in parts:
                 op = ">" if ">" in parts else "1>"
                 idx = parts.index(op)
-                redirect_file = parts[idx + 1]
+                redirect_out = parts[idx + 1]
                 parts = parts[:idx]
             #
             command_name = parts[0]
@@ -137,21 +141,28 @@ def main():
                     # If you typed >, it opens the text file and hooks up the output pipe to it (os.dup2).
                     # Then, it uses os.execvp to replace its own brain with the command you typed
                     #  (like cat or ls) and runs it.
-                    if redirect_file:
+                    if redirect_out:
                         fd = os.open(
-                            redirect_file, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o644
+                            redirect_out, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o644
                         )
-                        #
-                        # translation:
-                        # os.O_WRONLY: Open the file for WRiting ONLY (no reading).
-                        # |: The glue that mixes these rules together.
-                        # os.O_CREAT: If the file does not exist yet, CREATe it.
-                        # os.O_TRUNC: If the file already has text inside, TRUNCate (erase) it completely before starting to write.
-                        # 0o644: The security permissions. It just means "I can read and write to this file,
-                        #  but other users can only read it."
                         os.dup2(fd, sys.stdout.fileno())
                         os.close(fd)
+                    if redirect_err:
+                        fd = os.open(
+                            redirect_err, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o644
+                        )
+                        os.dup2(fd, sys.stderr.fileno())
+                        os.close(fd)
                     os.execvp(command_name, parts)
+                    #
+                    # translation:
+                    # os.O_WRONLY: Open the file for WRiting ONLY (no reading).
+                    # |: The glue that mixes these rules together.
+                    # os.O_CREAT: If the file does not exist yet, CREATe it.
+                    # os.O_TRUNC: If the file already has text inside, TRUNCate (erase) it completely before starting to write.
+                    # 0o644: The security permissions. It just means "I can read and write to this file,
+                    #  but other users can only read it."
+
                 else:
                     os.waitpid(pid, 0)
             if not found:
