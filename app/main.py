@@ -80,7 +80,28 @@ def get_input(builtins):
 
             # Tab key (Autocompletion)
             elif char == "\t":
-                matches = [b for b in builtins if b.startswith(command)]
+                # Search builtins
+                matches = set([b for b in builtins if b.startswith(command)])
+
+                # Search PATH for executables
+                path_env = os.environ.get("PATH", "")
+                if path_env:
+                    for directory in path_env.split(os.pathsep):
+                        if os.path.isdir(directory):
+                            try:
+                                for filename in os.listdir(directory):
+                                    if filename.startswith(command):
+                                        full_path = os.path.join(directory, filename)
+                                        if os.path.isfile(full_path) and os.access(
+                                            full_path, os.X_OK
+                                        ):
+                                            matches.add(filename)
+                            except OSError:
+                                continue
+
+                matches = list(matches)
+
+                # Complete if exactly one match is found
                 if len(matches) == 1:
                     remainder = matches[0][len(command) :]
                     sys.stdout.write(remainder + " ")
