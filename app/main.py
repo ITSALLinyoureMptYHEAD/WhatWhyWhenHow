@@ -117,7 +117,8 @@ def main():
             # old code: 'parts = command.split()' , new code:
             parts = parse_arguments(command)
             #
-            redirect_file = None
+            redirect_out = None
+            redirect_err = None
             if "2>" in parts:
                 idx = parts.index("2>")
                 redirect_err = parts[idx + 1]
