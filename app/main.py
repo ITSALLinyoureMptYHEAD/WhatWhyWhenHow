@@ -139,7 +139,7 @@ def get_input(builtins):
         termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
 
 
-def execute_command(command_str, builtins_list):
+def execute_command(command_str, builtins_list, history_log):
     parts = parse_arguments(command_str)
     if not parts:
         return
@@ -216,7 +216,7 @@ def execute_command(command_str, builtins_list):
                 sys.stdout.write(f"{target}: not found\n")
     elif command_name == "history":
         for i, cmd in enumerate(history_log):
-            sys.stdout.write(f" {i+1}  {cmd}\n")
+            sys.stdout.write(f"  {i + 1}  {cmd}\n")
     else:
         # It's an external command (cat, wc, ls, etc.)
         try:
@@ -279,7 +279,7 @@ def main():
                     os.close(curr_pipe_read)
 
                 # Execute the actual command logic
-                execute_command(cmd_str, builtins_list)
+                execute_command(cmd_str, builtins_list, history_log)
                 os._exit(0)
             else:
                 # PARENT PROCESS
