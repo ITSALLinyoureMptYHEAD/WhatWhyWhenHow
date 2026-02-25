@@ -215,8 +215,23 @@ def execute_command(command_str, builtins_list, history_log):
             if not found:
                 sys.stdout.write(f"{target}: not found\n")
     elif command_name == "history":
-        for i, cmd in enumerate(history_log):
-            sys.stdout.write(f"  {i + 1}  {cmd}\n")
+        # Check if user provided a number (like 'history 2')
+        limit = len(history_log)
+        if len(parts) > 1:
+            try:
+                # We turn the second word (parts[1]) into a number
+                limit = int(parts[1])
+            except ValueError:
+                pass
+
+        # Slice the list to only get the last 'limit' items
+        # start_index helps us keep the numbering correct (e.g., 3, 4 instead of 1, 2)
+        start_index = max(0, len(history_log) - limit)
+        display_list = history_log[start_index:]
+
+        for i, cmd in enumerate(display_list):
+            real_num = start_index + i + 1
+            sys.stdout.write(f"  {real_num}  {cmd}\n")
     else:
         # It's an external command (cat, wc, ls, etc.)
         try:
