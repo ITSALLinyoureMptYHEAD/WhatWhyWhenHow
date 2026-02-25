@@ -60,8 +60,9 @@ def parse_arguments(command):
     return args
 
 
-def get_input(builtins):
+def get_input(builtins, history_log):
     command = ""
+    hist_idx = len(history_log)  # Pointer for history navigation
     old_settings = termios.tcgetattr(sys.stdin)
     tty.setraw(sys.stdin)
 
@@ -69,13 +70,37 @@ def get_input(builtins):
         while True:
             char = sys.stdin.read(1)
 
-            # Enter key
+            # --- ARROW KEY DETECTION ---
+            if char == "\x1b":
+                next1 = sys.stdin.read(1)
+                next2 = sys.stdin.read(1)
+
+                if next1 == "[" and next2 == "A":  # UP ARROW
+                    if hist_idx > 0:
+                        hist_idx -= 1
+                        command = history_log[hist_idx]
+                        # \r = Start of line, \x1b[K = Erase currently typed text
+                        sys.stdout.write("\r\x1b[K$ " + command)
+
+                elif next1 == "[" and next2 == "B":  # DOWN ARROW
+                    if hist_idx < len(history_log) - 1:
+                        hist_idx += 1
+                        command = history_log[hist_idx]
+                        sys.stdout.write("\r\x1b[K$ " + command)
+                    else:
+                        hist_idx = len(history_log)
+                        command = ""
+                        sys.stdout.write("\r\x1b[K$ ")
+                sys.stdout.flush()
+                continue
+
+            # --- ENTER KEY ---
             if char in ("\n", "\r"):
                 sys.stdout.write("\r\n")
                 return command
 
+            # --- TAB COMPLETION ---
             elif char == "\t":
-                # Gather all possible matches
                 matches = set([b for b in builtins if b.startswith(command)])
                 path_env = os.environ.get("PATH", "")
                 if path_env:
@@ -91,45 +116,35 @@ def get_input(builtins):
                                             matches.add(filename)
                             except OSError:
                                 continue
-
                 matches = sorted(list(matches))
-
-                # SCENARIO A: Exactly one match -> Complete it + one space
                 if len(matches) == 1:
                     remainder = matches[0][len(command) :]
                     sys.stdout.write(remainder + " ")
                     command += remainder + " "
-
-                # SCENARIO B: Multiple matches
                 elif len(matches) > 1:
-                    # Find the longest common part they all share
                     common = os.path.commonprefix(matches)
-
                     if len(common) > len(command):
-                        # If they share a common start
                         remainder = common[len(command) :]
                         sys.stdout.write(remainder)
                         command += remainder
                     else:
-                        sys.stdout.write("\a")
-                        sys.stdout.write("\r\n" + "  ".join(matches) + "\r\n")
-                        sys.stdout.write("$ " + command)
-
-                # SCENARIO C: No matches
+                        sys.stdout.write(
+                            "\a\r\n" + "  ".join(matches) + "\r\n$ " + command
+                        )
                 else:
                     sys.stdout.write("\a")
 
-            # Backspace key
+            # --- BACKSPACE ---
             elif char == "\x7f":
                 if len(command) > 0:
                     command = command[:-1]
                     sys.stdout.write("\b \b")
 
-            # Ctrl+C to exit safely
+            # --- CTRL+C ---
             elif char == "\x03":
                 sys.exit(0)
 
-            # Normal typing
+            # --- NORMAL TYPING ---
             else:
                 sys.stdout.write(char)
                 command += char
@@ -247,7 +262,7 @@ def main():
         sys.stdout.write("$ ")
         sys.stdout.flush()
         builtins_list = ["echo", "exit", "type", "pwd", "cd", "history"]
-        command = get_input(builtins_list)
+        command = get_input(builtins_list, history_log)
         if command:
             history_log.append(command)  # Add it to the list
 
