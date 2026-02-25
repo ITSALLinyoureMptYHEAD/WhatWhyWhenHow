@@ -214,6 +214,9 @@ def execute_command(command_str, builtins_list):
                     break
             if not found:
                 sys.stdout.write(f"{target}: not found\n")
+    elif command_name == "history":
+        for i, cmd in enumerate(history_log):
+            sys.stdout.write(f" {i+1}  {cmd}\n")
     else:
         # It's an external command (cat, wc, ls, etc.)
         try:
@@ -224,11 +227,14 @@ def execute_command(command_str, builtins_list):
 
 
 def main():
+    history_log = []  # This is the memory bank
     while True:
         sys.stdout.write("$ ")
         sys.stdout.flush()
-        builtins_list = ["echo", "exit", "type", "pwd", "cd"]
+        builtins_list = ["echo", "exit", "type", "pwd", "cd", "history"]
         command = get_input(builtins_list)
+        if command:
+            history_log.append(command)  # Add it to the list
 
         if not command:
             continue
