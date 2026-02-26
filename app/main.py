@@ -346,15 +346,13 @@ def main():
                 pass
 
         if command.strip() == "exit":
+            history_log.append(command)  # Add the exit command to history
             hist_file = os.environ.get("HISTFILE")
             if hist_file:
                 with open(hist_file, "a") as f:
                     for line in history_log[history_append_idx:]:
                         f.write(line + "\n")
             break
-        parts = parse_arguments(command)
-        if not parts:
-            continue
 
         if parts[0] == "cd":
             dest = parts[1] if len(parts) > 1 else os.environ.get("HOME")
