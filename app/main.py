@@ -315,6 +315,9 @@ def execute_command(command_str, builtins_list, history_log):
         os.waitpid(pid, 0)
 
 
+history_append_idx = 0
+
+
 def main():
     history_log = []
     builtins_list = ["echo", "exit", "type", "pwd", "cd", "history"]
@@ -377,8 +380,9 @@ def main():
             append_to_history(command)
             if len(parts) > 2:
                 with open(parts[2], "a") as f:
-                    for line in history_log:
+                    for line in history_log[history_append_idx:]:
                         f.write(line + "\n")
+                history_append_idx = len(history_log)
             continue
         history_log.append(command)
         append_to_history(command)
