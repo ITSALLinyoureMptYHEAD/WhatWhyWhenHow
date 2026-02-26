@@ -188,12 +188,11 @@ def execute_command(command_str, builtins_list, history_log):
             filename = parts[2]
             if os.path.exists(filename):
                 with open(filename, "r") as f:
-                    # Append new lines to our existing log
                     for line in f:
                         history_log.append(line.strip())
-            return  # IMPORTANT: Do NOT print history when using -r
+            return  # DO NOT print anything for -r
 
-        # Normal history printing logic
+        # Handle limiting (e.g., 'history 2')
         limit = len(history_log)
         if len(parts) > 1:
             try:
@@ -201,20 +200,11 @@ def execute_command(command_str, builtins_list, history_log):
             except ValueError:
                 pass
 
+        # Print the history only ONCE with precise spacing
         start_index = max(0, len(history_log) - limit)
         for i in range(start_index, len(history_log)):
-            # Precise spacing: two spaces, number, two spaces, command
+            # Two spaces, index, two spaces, command
             sys.stdout.write(f"  {i + 1}  {history_log[i]}\n")
-
-        start_index = max(0, len(history_log) - limit)
-        for i in range(start_index, len(history_log)):
-            # The exact spacing (two spaces) often matters for CodeCrafters
-            sys.stdout.write(f"  {i + 1}  {history_log[i]}\n")
-
-        # Slice the list to only get the last 'limit' items
-        # start_index helps us keep the numbering correct (e.g., 3, 4 instead of 1, 2)
-        start_index = max(0, len(history_log) - limit)
-        display_list = history_log[start_index:]
 
         for i, cmd in enumerate(display_list):
             real_num = start_index + i + 1
