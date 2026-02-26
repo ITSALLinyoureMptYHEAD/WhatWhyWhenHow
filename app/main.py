@@ -314,9 +314,10 @@ def execute_command(command_str, builtins_list, history_log):
     for pid in pids:
         os.waitpid(pid, 0)
 
+
 def main():
-history_append_idx = 0
     history_log = []
+    history_append_idx = 0
 
     builtins_list = ["echo", "exit", "type", "pwd", "cd", "history"]
 
