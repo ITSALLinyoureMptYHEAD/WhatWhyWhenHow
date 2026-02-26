@@ -372,7 +372,14 @@ def main():
                     for line in history_log:
                         f.write(line + "\n")
             continue
-
+        elif parts[0] == "history" and len(parts) > 1 and parts[1] == "-a":
+            history_log.append(command)
+            append_to_history(command)
+            if len(parts) > 2:
+                with open(parts[2], "a") as f:
+                    for line in history_log:
+                        f.write(line + "\n")
+            continue
         history_log.append(command)
         append_to_history(command)
         execute_command(command, builtins_list, history_log)
