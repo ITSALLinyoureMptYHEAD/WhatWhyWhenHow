@@ -4,7 +4,6 @@ import termios
 import tty
 
 
-# Handles quotes and escaped characters for all shell commands
 def parse_arguments(command):
     args = []
     current_arg = ""
@@ -35,7 +34,6 @@ def parse_arguments(command):
     return args
 
 
-# Custom input handler to support Arrow Key navigation
 def get_input(builtins, history_log):
     command = ""
     hist_idx = len(history_log)
@@ -44,15 +42,15 @@ def get_input(builtins, history_log):
     try:
         while True:
             char = sys.stdin.read(1)
-            if char == "\x1b":  # Detect Arrows
+            if char == "\x1b":
                 next1 = sys.stdin.read(1)
                 next2 = sys.stdin.read(1)
-                if next1 == "[" and next2 == "A":  # UP ARROW
+                if next1 == "[" and next2 == "A":
                     if hist_idx > 0:
                         hist_idx -= 1
                         command = history_log[hist_idx]
                         sys.stdout.write("\r\x1b[K$ " + command)
-                elif next1 == "[" and next2 == "B":  # DOWN ARROW
+                elif next1 == "[" and next2 == "B":
                     if hist_idx < len(history_log) - 1:
                         hist_idx += 1
                         command = history_log[hist_idx]
@@ -66,11 +64,11 @@ def get_input(builtins, history_log):
             if char in ("\n", "\r"):
                 sys.stdout.write("\r\n")
                 return command
-            elif char == "\x7f":  # Backspace
+            elif char == "\x7f":
                 if len(command) > 0:
                     command = command[:-1]
                     sys.stdout.write("\b \b")
-            elif char == "\x03":  # Ctrl+C
+            elif char == "\x03":
                 sys.exit(0)
             else:
                 sys.stdout.write(char)
@@ -80,7 +78,6 @@ def get_input(builtins, history_log):
         termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
 
 
-# Logic for builtins and external programs
 def execute_command(command_str, builtins_list, history_log):
     parts = parse_arguments(command_str)
     if not parts:
@@ -91,6 +88,22 @@ def execute_command(command_str, builtins_list, history_log):
         sys.stdout.write(" ".join(parts[1:]) + "\n")
     elif cmd_name == "pwd":
         sys.stdout.write(os.getcwd() + "\n")
+    elif cmd_name == "type":
+        if len(parts) > 1:
+            target = parts[1]
+            if target in builtins_list:
+                sys.stdout.write(f"{target} is a shell builtin\n")
+            else:
+                paths = os.environ.get("PATH", "").split(":")
+                found = False
+                for path in paths:
+                    full_path = os.path.join(path, target)
+                    if os.path.isfile(full_path) and os.access(full_path, os.X_OK):
+                        sys.stdout.write(f"{target} is {full_path}\n")
+                        found = True
+                        break
+                if not found:
+                    sys.stdout.write(f"{target}: not found\n")
     elif cmd_name == "history":
         limit = len(history_log)
         if len(parts) > 1:
@@ -98,7 +111,6 @@ def execute_command(command_str, builtins_list, history_log):
                 limit = int(parts[1])
             except ValueError:
                 pass
-        # Use precise formatting for Listing stage
         start_index = max(0, len(history_log) - limit)
         for i in range(start_index, len(history_log)):
             sys.stdout.write(f"{i + 1:>5}  {history_log[i]}\n")
@@ -111,7 +123,6 @@ def execute_command(command_str, builtins_list, history_log):
 
 
 def main():
-    # Load history on startup
     history_log = []
     while True:
         sys.stdout.write("$ ")
@@ -122,7 +133,6 @@ def main():
         if not command:
             continue
 
-        # Expansion: !number logic MUST be in parent
         if command.startswith("!"):
             try:
                 idx = int(command[1:]) - 1
@@ -142,7 +152,6 @@ def main():
         if not parts:
             continue
 
-        # State-Changing commands MUST run in parent to update memory
         if parts[0] == "cd":
             dest = parts[1] if len(parts) > 1 else os.environ.get("HOME")
             try:
@@ -153,7 +162,6 @@ def main():
             continue
         elif parts[0] == "history" and len(parts) > 1 and parts[1] == "-r":
             history_log.append(command)
-
             if len(parts) > 2 and os.path.exists(parts[2]):
                 with open(parts[2], "r") as f:
                     for line in f:
@@ -162,7 +170,6 @@ def main():
 
         history_log.append(command)
 
-        # Standard execution via Forking
         pid = os.fork()
         if pid == 0:
             execute_command(command, builtins_list, history_log)
