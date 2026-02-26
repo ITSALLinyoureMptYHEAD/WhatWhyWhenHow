@@ -183,12 +183,28 @@ def execute_command(command_str, builtins_list, history_log):
             if not found:
                 sys.stdout.write(f"{target}: not found\n")
     elif command_name == "history":
+        # Stage #ZA2: Handle the -r flag (Read from file)
+        if len(parts) > 2 and parts[1] == "-r":
+            filename = parts[2]
+            if os.path.exists(filename):
+                with open(filename, "r") as f:
+                    # Append new lines to our existing log
+                    for line in f:
+                        history_log.append(line.strip())
+            return  # IMPORTANT: Do NOT print history when using -r
+
+        # Normal history printing logic
         limit = len(history_log)
         if len(parts) > 1:
             try:
                 limit = int(parts[1])
             except ValueError:
                 pass
+
+        start_index = max(0, len(history_log) - limit)
+        for i in range(start_index, len(history_log)):
+            # Precise spacing: two spaces, number, two spaces, command
+            sys.stdout.write(f"  {i + 1}  {history_log[i]}\n")
 
         start_index = max(0, len(history_log) - limit)
         for i in range(start_index, len(history_log)):
