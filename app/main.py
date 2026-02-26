@@ -167,13 +167,13 @@ def main():
             append_to_history(command)
             continue
         elif parts[0] == "history" and len(parts) > 1 and parts[1] == "-r":
-            # Silently read the file
+            history_log.append(command)
+            append_to_history(command)
+
             if len(parts) > 2 and os.path.exists(parts[2]):
                 with open(parts[2], "r") as f:
                     for line in f:
                         history_log.append(line.strip())
-            history_log.append(command)
-            append_to_history(command)
             continue
 
         history_log.append(command)
