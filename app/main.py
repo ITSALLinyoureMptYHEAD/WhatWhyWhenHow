@@ -353,7 +353,9 @@ def main():
                     for line in history_log[history_append_idx:]:
                         f.write(line + "\n")
             break
-
+        parts = parse_arguments(command)
+        if not parts:
+            continue
         if parts[0] == "cd":
             dest = parts[1] if len(parts) > 1 else os.environ.get("HOME")
             try:
