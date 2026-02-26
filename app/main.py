@@ -222,44 +222,51 @@ def append_to_history(command):
 
 
 def main():
+    def main():
     history_log = load_history()
     while True:
         sys.stdout.write("$ ")
         sys.stdout.flush()
         builtins_list = ["echo", "exit", "type", "pwd", "cd", "history"]
         command = get_input(builtins_list, history_log)
-        if command:
-            history_log.append(command)  # Add it to the list
-            append_to_history(command)
-        # expansion logic for !number
+        
+        if not command: continue
+        
+        # --- Stage: !number Expansion ---
         if command.startswith("!"):
             try:
-                # Extract the number (e.g., !1 -> index 0)
                 idx = int(command[1:]) - 1
                 if 0 <= idx < len(history_log):
                     command = history_log[idx]
-                    # Print the expanded command so the user sees it
                     sys.stdout.write(command + "\n")
                 else:
                     sys.stdout.write(f"{command}: event not found\n")
                     continue
-            except ValueError:
-                pass  # Not a number, treat as a normal command
-        if not command:
-            continue
-        if command.strip() == "exit":
-            break
+            except ValueError: pass
 
-        # Handle 'cd' separately because it MUST happen in the parent process
-        if command.startswith("cd"):
-            parts = parse_arguments(command)
+        # Save the expanded command to memory and file
+        history_log.append(command)
+        append_to_history(command)
+
+        if command.strip() == "exit": break
+
+        # --- Stage: Handle State-Changing Builtins in Parent ---
+        parts = parse_arguments(command)
+        cmd_name = parts[0]
+
+        if cmd_name == "cd":
             destination = parts[1].strip() if len(parts) > 1 else os.environ.get("HOME")
             if destination.startswith("~"):
                 destination = destination.replace("~", os.environ.get("HOME"), 1)
             try:
                 os.chdir(destination)
-            except (FileNotFoundError, NotADirectoryError) as e:
-                print(f"cd: {destination}: {e.strerror}")
+            except Exception as e:
+                print(f"cd: {destination}: {str(e)}")
+            continue
+
+        elif cmd_name == "history" and len(parts) > 1 and parts[1] in ["-r", "-w", "-a"]:
+            # Handle reading/writing history in the parent so memory is preserved
+            handle_history_file_ops(parts, history_log)
             continue
 
         # Handle Pipes
