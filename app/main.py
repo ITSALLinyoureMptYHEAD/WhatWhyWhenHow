@@ -62,7 +62,7 @@ def parse_arguments(command):
 
 def get_input(builtins, history_log):
     command = ""
-    hist_idx = len(history_log)  # Pointer for history navigation
+    hist_idx = len(history_log)
     old_settings = termios.tcgetattr(sys.stdin)
     tty.setraw(sys.stdin)
 
@@ -70,19 +70,15 @@ def get_input(builtins, history_log):
         while True:
             char = sys.stdin.read(1)
 
-            # --- ARROW KEY DETECTION ---
-            if char == "\x1b":
+            if char == "\x1b":  # Detect Arrow Keys
                 next1 = sys.stdin.read(1)
                 next2 = sys.stdin.read(1)
-
-                if next1 == "[" and next2 == "A":  # UP ARROW
+                if next1 == "[" and next2 == "A":  # UP
                     if hist_idx > 0:
                         hist_idx -= 1
                         command = history_log[hist_idx]
-                        # \r = Start of line, \x1b[K = Erase currently typed text
                         sys.stdout.write("\r\x1b[K$ " + command)
-
-                elif next1 == "[" and next2 == "B":  # DOWN ARROW
+                elif next1 == "[" and next2 == "B":  # DOWN
                     if hist_idx < len(history_log) - 1:
                         hist_idx += 1
                         command = history_log[hist_idx]
@@ -94,61 +90,18 @@ def get_input(builtins, history_log):
                 sys.stdout.flush()
                 continue
 
-            # --- ENTER KEY ---
             if char in ("\n", "\r"):
                 sys.stdout.write("\r\n")
                 return command
-
-            # --- TAB COMPLETION ---
-            elif char == "\t":
-                matches = set([b for b in builtins if b.startswith(command)])
-                path_env = os.environ.get("PATH", "")
-                if path_env:
-                    for directory in path_env.split(os.pathsep):
-                        if os.path.isdir(directory):
-                            try:
-                                for filename in os.listdir(directory):
-                                    if filename.startswith(command):
-                                        full_path = os.path.join(directory, filename)
-                                        if os.path.isfile(full_path) and os.access(
-                                            full_path, os.X_OK
-                                        ):
-                                            matches.add(filename)
-                            except OSError:
-                                continue
-                matches = sorted(list(matches))
-                if len(matches) == 1:
-                    remainder = matches[0][len(command) :]
-                    sys.stdout.write(remainder + " ")
-                    command += remainder + " "
-                elif len(matches) > 1:
-                    common = os.path.commonprefix(matches)
-                    if len(common) > len(command):
-                        remainder = common[len(command) :]
-                        sys.stdout.write(remainder)
-                        command += remainder
-                    else:
-                        sys.stdout.write(
-                            "\a\r\n" + "  ".join(matches) + "\r\n$ " + command
-                        )
-                else:
-                    sys.stdout.write("\a")
-
-            # --- BACKSPACE ---
-            elif char == "\x7f":
+            elif char == "\x7f":  # Backspace
                 if len(command) > 0:
                     command = command[:-1]
                     sys.stdout.write("\b \b")
-
-            # --- CTRL+C ---
-            elif char == "\x03":
+            elif char == "\x03":  # Ctrl+C
                 sys.exit(0)
-
-            # --- NORMAL TYPING ---
             else:
                 sys.stdout.write(char)
                 command += char
-
             sys.stdout.flush()
     finally:
         termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
@@ -256,8 +209,22 @@ def execute_command(command_str, builtins_list, history_log):
             os._exit(1)
 
 
+def load_history():
+    history_file = os.path.expanduser("~/.shell_history")
+    if os.path.exists(history_file):
+        with open(history_file, "r") as f:
+            return [line.strip() for line in f.readlines()]
+    return []
+
+
+def append_to_history(command):
+    history_file = os.path.expanduser("~/.shell_history")
+    with open(history_file, "a") as f:
+        f.write(command + "\n")
+
+
 def main():
-    history_log = []  # This is the memory bank
+    history_log = load_history()
     while True:
         sys.stdout.write("$ ")
         sys.stdout.flush()
@@ -265,10 +232,9 @@ def main():
         command = get_input(builtins_list, history_log)
         if command:
             history_log.append(command)  # Add it to the list
-
+            append_to_history(command)
         if not command:
             continue
-
         if command.strip() == "exit":
             break
 
