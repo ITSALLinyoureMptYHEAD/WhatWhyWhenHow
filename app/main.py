@@ -183,14 +183,17 @@ def execute_command(command_str, builtins_list, history_log):
             if not found:
                 sys.stdout.write(f"{target}: not found\n")
     elif command_name == "history":
-        # Check if user provided a number (like 'history 2')
         limit = len(history_log)
         if len(parts) > 1:
             try:
-                # We turn the second word (parts[1]) into a number
                 limit = int(parts[1])
             except ValueError:
                 pass
+
+        start_index = max(0, len(history_log) - limit)
+        for i in range(start_index, len(history_log)):
+            # The exact spacing (two spaces) often matters for CodeCrafters
+            sys.stdout.write(f"  {i + 1}  {history_log[i]}\n")
 
         # Slice the list to only get the last 'limit' items
         # start_index helps us keep the numbering correct (e.g., 3, 4 instead of 1, 2)
@@ -233,6 +236,20 @@ def main():
         if command:
             history_log.append(command)  # Add it to the list
             append_to_history(command)
+        # expansion logic for !number
+        if command.startswith("!"):
+            try:
+                # Extract the number (e.g., !1 -> index 0)
+                idx = int(command[1:]) - 1
+                if 0 <= idx < len(history_log):
+                    command = history_log[idx]
+                    # Print the expanded command so the user sees it
+                    sys.stdout.write(command + "\n")
+                else:
+                    sys.stdout.write(f"{command}: event not found\n")
+                    continue
+            except ValueError:
+                pass  # Not a number, treat as a normal command
         if not command:
             continue
         if command.strip() == "exit":
