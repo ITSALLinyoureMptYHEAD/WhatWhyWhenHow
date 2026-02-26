@@ -113,7 +113,6 @@ def execute_command(command_str, builtins_list, history_log):
 def main():
     # Load history on startup
     history_log = []
-    history_log = load_history()
     while True:
         sys.stdout.write("$ ")
         sys.stdout.flush()
