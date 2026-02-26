@@ -190,7 +190,7 @@ def execute_command(command_str, builtins_list, history_log):
                 with open(filename, "r") as f:
                     for line in f:
                         history_log.append(line.strip())
-            return  # DO NOT print anything for -r
+            return  # MUST return here so we don't print anything
 
         # Handle limiting (e.g., 'history 2')
         limit = len(history_log)
@@ -200,22 +200,11 @@ def execute_command(command_str, builtins_list, history_log):
             except ValueError:
                 pass
 
-        # Print the history only ONCE with precise spacing
+        # Print history only ONCE using the current log
         start_index = max(0, len(history_log) - limit)
         for i in range(start_index, len(history_log)):
-            # Two spaces, index, two spaces, command
+            # spacing: two spaces, index, two spaces, command
             sys.stdout.write(f"  {i + 1}  {history_log[i]}\n")
-
-        for i, cmd in enumerate(display_list):
-            real_num = start_index + i + 1
-            sys.stdout.write(f"  {real_num}  {cmd}\n")
-    else:
-        # It's an external command (cat, wc, ls, etc.)
-        try:
-            os.execvp(command_name, parts)
-        except FileNotFoundError:
-            sys.stderr.write(f"{command_name}: not found\n")
-            os._exit(1)
 
 
 def load_history():
