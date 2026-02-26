@@ -90,7 +90,8 @@ def split_pipeline(command):
             curr = ""
         else:
             curr += char
-    cmds.append(curr)
+    if curr.strip():
+        cmds.append(curr)
     return [c.strip() for c in cmds if c.strip()]
 
 
@@ -175,15 +176,61 @@ def execute_single(command_str, builtins_list, history_log):
     parts = parse_arguments(command_str)
     if not parts:
         return
-    cmd_name = parts[0]
+
+    new_parts = []
+    i = 0
+    redir_out = None
+    redir_err = None
+    append_out = False
+    append_err = False
+
+    while i < len(parts):
+        if parts[i] in (">", "1>"):
+            redir_out = parts[i + 1]
+            append_out = False
+            i += 2
+        elif parts[i] in (">>", "1>>"):
+            redir_out = parts[i + 1]
+            append_out = True
+            i += 2
+        elif parts[i] == "2>":
+            redir_err = parts[i + 1]
+            append_err = False
+            i += 2
+        elif parts[i] == "2>>":
+            redir_err = parts[i + 1]
+            append_err = True
+            i += 2
+        else:
+            new_parts.append(parts[i])
+            i += 1
+
+    if not new_parts:
+        return
+
+    old_stdout = os.dup(1)
+    old_stderr = os.dup(2)
+
+    if redir_out:
+        mode = os.O_WRONLY | os.O_CREAT | (os.O_APPEND if append_out else os.O_TRUNC)
+        fd = os.open(redir_out, mode, 0o644)
+        os.dup2(fd, 1)
+        os.close(fd)
+    if redir_err:
+        mode = os.O_WRONLY | os.O_CREAT | (os.O_APPEND if append_err else os.O_TRUNC)
+        fd = os.open(redir_err, mode, 0o644)
+        os.dup2(fd, 2)
+        os.close(fd)
+
+    cmd_name = new_parts[0]
 
     if cmd_name == "echo":
-        sys.stdout.write(" ".join(parts[1:]) + "\n")
+        sys.stdout.write(" ".join(new_parts[1:]) + "\n")
     elif cmd_name == "pwd":
         sys.stdout.write(os.getcwd() + "\n")
     elif cmd_name == "type":
-        if len(parts) > 1:
-            target = parts[1]
+        if len(new_parts) > 1:
+            target = new_parts[1]
             if target in builtins_list:
                 sys.stdout.write(f"{target} is a shell builtin\n")
             else:
@@ -198,20 +245,27 @@ def execute_single(command_str, builtins_list, history_log):
                     sys.stdout.write(f"{target}: not found\n")
     elif cmd_name == "history":
         limit = len(history_log)
-        if len(parts) > 1:
+        if len(new_parts) > 1:
             try:
-                limit = int(parts[1])
+                limit = int(new_parts[1])
             except ValueError:
                 pass
         start_index = max(0, len(history_log) - limit)
-        for i in range(start_index, len(history_log)):
-            sys.stdout.write(f"{i + 1:>5}  {history_log[i]}\n")
+        for j in range(start_index, len(history_log)):
+            sys.stdout.write(f"{j + 1:>5}  {history_log[j]}\n")
     else:
         try:
-            os.execvp(cmd_name, parts)
+            os.execvp(cmd_name, new_parts)
         except FileNotFoundError:
             sys.stderr.write(f"{cmd_name}: not found\n")
             os._exit(1)
+
+    sys.stdout.flush()
+    sys.stderr.flush()
+    os.dup2(old_stdout, 1)
+    os.dup2(old_stderr, 2)
+    os.close(old_stdout)
+    os.close(old_stderr)
 
 
 def execute_command(command_str, builtins_list, history_log):
