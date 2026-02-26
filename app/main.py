@@ -115,7 +115,7 @@ def execute_command(command_str, builtins_list, history_log):
         # Use precise formatting for Listing stage
         start_index = max(0, len(history_log) - limit)
         for i in range(start_index, len(history_log)):
-            sys.stdout.write(f"  {i + 1}  {history_log[i]}\n")
+            sys.stdout.write(f"{i + 1:>5}  {history_log[i]}\n")
     else:
         try:
             os.execvp(cmd_name, parts)
@@ -126,6 +126,7 @@ def execute_command(command_str, builtins_list, history_log):
 
 def main():
     # Load history on startup
+    history_log = []
     history_log = load_history()
     while True:
         sys.stdout.write("$ ")
