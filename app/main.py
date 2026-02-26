@@ -346,8 +346,12 @@ def main():
                 pass
 
         if command.strip() == "exit":
+            hist_file = os.environ.get("HISTFILE")
+            if hist_file:
+                with open(hist_file, "a") as f:
+                    for line in history_log[history_append_idx:]:
+                        f.write(line + "\n")
             break
-
         parts = parse_arguments(command)
         if not parts:
             continue
