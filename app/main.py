@@ -172,6 +172,12 @@ def get_input(builtins, history_log):
         termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
 
 
+def append_to_history(command):
+    history_file = os.path.expanduser("~/.shell_history")
+    with open(history_file, "a") as f:
+        f.write(command + "\n")
+
+
 def execute_single(command_str, builtins_list, history_log):
     parts = parse_arguments(command_str)
     if not parts:
@@ -344,19 +350,23 @@ def main():
             dest = parts[1] if len(parts) > 1 else os.environ.get("HOME")
             try:
                 os.chdir(os.path.expanduser(dest))
-            except Exception as e:
-                print(f"cd: {dest}: {e}")
+            except Exception:
+                sys.stdout.write(f"cd: {dest}: No such file or directory\n")
             history_log.append(command)
+            append_to_history(command)
             continue
         elif parts[0] == "history" and len(parts) > 1 and parts[1] == "-r":
             history_log.append(command)
-            if len(parts) > 2 and os.path.exists(parts[2]):
-                with open(parts[2], "r") as f:
+            append_to_history(command)
+            file_path = parts[2] if len(parts) > 2 else ""
+            if os.path.exists(file_path):
+                with open(file_path, "r") as f:
                     for line in f:
                         history_log.append(line.strip())
             continue
 
         history_log.append(command)
+        append_to_history(command)
         execute_command(command, builtins_list, history_log)
 
 
