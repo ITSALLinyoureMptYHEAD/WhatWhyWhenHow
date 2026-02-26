@@ -80,20 +80,6 @@ def get_input(builtins, history_log):
         termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
 
 
-def load_history():
-    history_file = os.path.expanduser("~/.shell_history")
-    if os.path.exists(history_file):
-        with open(history_file, "r") as f:
-            return [line.strip() for line in f.readlines()]
-    return []
-
-
-def append_to_history(command):
-    history_file = os.path.expanduser("~/.shell_history")
-    with open(history_file, "a") as f:
-        f.write(command + "\n")
-
-
 # Logic for builtins and external programs
 def execute_command(command_str, builtins_list, history_log):
     parts = parse_arguments(command_str)
@@ -165,11 +151,9 @@ def main():
             except Exception as e:
                 print(f"cd: {dest}: {e}")
             history_log.append(command)
-            append_to_history(command)
             continue
         elif parts[0] == "history" and len(parts) > 1 and parts[1] == "-r":
             history_log.append(command)
-            append_to_history(command)
 
             if len(parts) > 2 and os.path.exists(parts[2]):
                 with open(parts[2], "r") as f:
@@ -178,7 +162,6 @@ def main():
             continue
 
         history_log.append(command)
-        append_to_history(command)
 
         # Standard execution via Forking
         pid = os.fork()
