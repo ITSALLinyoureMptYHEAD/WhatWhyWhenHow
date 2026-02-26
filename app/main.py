@@ -317,8 +317,12 @@ def execute_command(command_str, builtins_list, history_log):
 
 def main():
     history_log = []
-    history_append_idx = 0
+    hist_file = os.environ.get("HISTFILE")
+    if hist_file and os.path.exists(hist_file):
+        with open(hist_file, "r") as f:
+            history_log = [line.strip() for line in f]
 
+    history_append_idx = len(history_log)
     builtins_list = ["echo", "exit", "type", "pwd", "cd", "history"]
 
     while True:
