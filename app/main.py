@@ -97,8 +97,6 @@ def execute_command(command_str, builtins_list, history_log):
     if not parts:
         return
     command_name = parts[0]
-
-    # Handle Redirections (Simplified for brevity, keep your existing logic if preferred)
     if command_name == "echo":
         sys.stdout.write(" ".join(parts[1:]) + "\n")
     elif command_name == "pwd":
@@ -128,11 +126,10 @@ def main():
         sys.stdout.flush()
         builtins_list = ["echo", "exit", "type", "pwd", "cd", "history"]
         command = get_input(builtins_list, history_log)
-
         if not command:
             continue
 
-        # Bang Expansion (Must be in parent)
+        # Handle !number Expansion in Parent
         if command.startswith("!"):
             try:
                 idx = int(command[1:]) - 1
@@ -154,7 +151,7 @@ def main():
         if not parts:
             continue
 
-        # Handle State-Changing commands in Parent
+        # Handle state-changing builtins in parent to ensure persistence
         if parts[0] == "cd":
             dest = parts[1] if len(parts) > 1 else os.environ.get("HOME")
             try:
@@ -163,10 +160,13 @@ def main():
                 print(f"cd: {dest}: {e}")
             continue
         elif parts[0] == "history" and len(parts) > 1 and parts[1] == "-r":
-            history_log.extend(load_history())
+            # Silently read history file into memory (Parent process only)
+            if len(parts) > 2 and os.path.exists(parts[2]):
+                with open(parts[2], "r") as f:
+                    for line in f:
+                        history_log.append(line.strip())
             continue
 
-        # Handle Pipes and Forking
         pid = os.fork()
         if pid == 0:
             execute_command(command, builtins_list, history_log)
