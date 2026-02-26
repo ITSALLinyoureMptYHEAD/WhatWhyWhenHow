@@ -42,7 +42,8 @@ def get_input(builtins, history_log):
     try:
         while True:
             char = sys.stdin.read(1)
-            if char == "\x1b":  # Arrow Keys
+            # Arrow Keys Detection
+            if char == "\x1b":
                 next1 = sys.stdin.read(1)
                 next2 = sys.stdin.read(1)
                 if next1 == "[" and next2 == "A":  # UP
@@ -96,26 +97,28 @@ def execute_command(command_str, builtins_list, history_log):
     parts = parse_arguments(command_str)
     if not parts:
         return
-    command_name = parts[0]
-    if command_name == "echo":
+    cmd_name = parts[0]
+
+    if cmd_name == "echo":
         sys.stdout.write(" ".join(parts[1:]) + "\n")
-    elif command_name == "pwd":
+    elif cmd_name == "pwd":
         sys.stdout.write(os.getcwd() + "\n")
-    elif command_name == "history":
+    elif cmd_name == "history":
         limit = len(history_log)
         if len(parts) > 1:
             try:
                 limit = int(parts[1])
             except ValueError:
                 pass
+        # Correct global indexing for Limiting stage
         start_index = max(0, len(history_log) - limit)
         for i in range(start_index, len(history_log)):
             sys.stdout.write(f"  {i + 1}  {history_log[i]}\n")
     else:
         try:
-            os.execvp(command_name, parts)
+            os.execvp(cmd_name, parts)
         except FileNotFoundError:
-            sys.stderr.write(f"{command_name}: not found\n")
+            sys.stderr.write(f"{cmd_name}: not found\n")
             os._exit(1)
 
 
@@ -129,7 +132,7 @@ def main():
         if not command:
             continue
 
-        # Handle !number Expansion in Parent
+        # !number Expansion
         if command.startswith("!"):
             try:
                 idx = int(command[1:]) - 1
@@ -142,8 +145,6 @@ def main():
             except ValueError:
                 pass
 
-        history_log.append(command)
-        append_to_history(command)
         if command.strip() == "exit":
             break
 
@@ -151,22 +152,30 @@ def main():
         if not parts:
             continue
 
-        # Handle state-changing builtins in parent to ensure persistence
+        # Parent-only State Changes
         if parts[0] == "cd":
             dest = parts[1] if len(parts) > 1 else os.environ.get("HOME")
             try:
                 os.chdir(os.path.expanduser(dest))
             except Exception as e:
                 print(f"cd: {dest}: {e}")
+            history_log.append(command)
+            append_to_history(command)
             continue
         elif parts[0] == "history" and len(parts) > 1 and parts[1] == "-r":
-            # Silently read history file into memory (Parent process only)
+            # Silent file read into memory
             if len(parts) > 2 and os.path.exists(parts[2]):
                 with open(parts[2], "r") as f:
                     for line in f:
                         history_log.append(line.strip())
+            history_log.append(command)
+            append_to_history(command)
             continue
 
+        history_log.append(command)
+        append_to_history(command)
+
+        # Standard Execution (Forking)
         pid = os.fork()
         if pid == 0:
             execute_command(command, builtins_list, history_log)
