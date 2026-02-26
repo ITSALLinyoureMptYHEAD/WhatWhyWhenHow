@@ -4,29 +4,59 @@ import termios
 import tty
 
 
+def get_completions(prefix, builtins):
+    matches = set()
+    for b in builtins:
+        if b.startswith(prefix):
+            matches.add(b)
+    paths = os.environ.get("PATH", "").split(":")
+    for path in paths:
+        if os.path.isdir(path):
+            try:
+                for file in os.listdir(path):
+                    if file.startswith(prefix):
+                        full_path = os.path.join(path, file)
+                        if os.access(full_path, os.X_OK):
+                            matches.add(file)
+            except PermissionError:
+                pass
+    return list(matches)
+
+
+def common_prefix(strings):
+    if not strings:
+        return ""
+    m1 = min(strings)
+    m2 = max(strings)
+    for i, c in enumerate(m1):
+        if c != m2[i]:
+            return m1[:i]
+    return m1
+
+
 def parse_arguments(command):
     args = []
     current_arg = ""
-    in_single_quotes = False
-    in_double_quotes = False
-    escape_next = False
+    in_single = False
+    in_double = False
+    escape = False
     for char in command:
-        if escape_next:
-            if in_double_quotes and char not in ['"', "\\", "$", "`", "\n"]:
+        if escape:
+            if in_double and char not in ['"', "\\", "$", "`", "\n"]:
                 current_arg += "\\"
             current_arg += char
-            escape_next = False
+            escape = False
             continue
-        if char == "'" and not in_double_quotes:
-            in_single_quotes = not in_single_quotes
-        elif char == '"' and not in_single_quotes:
-            in_double_quotes = not in_double_quotes
-        elif char == " " and not in_single_quotes and not in_double_quotes:
+        if char == "'" and not in_double:
+            in_single = not in_single
+        elif char == '"' and not in_single:
+            in_double = not in_double
+        elif char == " " and not in_single and not in_double:
             if current_arg:
                 args.append(current_arg)
                 current_arg = ""
-        elif char == "\\" and not in_single_quotes:
-            escape_next = True
+        elif char == "\\" and not in_single:
+            escape = True
         else:
             current_arg += char
     if current_arg:
@@ -35,33 +65,33 @@ def parse_arguments(command):
 
 
 def split_pipeline(command):
-    commands = []
-    current = ""
-    in_single = False
-    in_double = False
-    escape = False
+    cmds = []
+    curr = ""
+    in_s = False
+    in_d = False
+    esc = False
     for char in command:
-        if escape:
-            current += char
-            escape = False
+        if esc:
+            curr += char
+            esc = False
         elif char == "'":
-            if not in_double:
-                in_single = not in_single
-            current += char
+            if not in_d:
+                in_s = not in_s
+            curr += char
         elif char == '"':
-            if not in_single:
-                in_double = not in_double
-            current += char
-        elif char == "\\" and not in_single:
-            escape = True
-            current += char
-        elif char == "|" and not in_single and not in_double:
-            commands.append(current)
-            current = ""
+            if not in_s:
+                in_d = not in_d
+            curr += char
+        elif char == "\\" and not in_s:
+            esc = True
+            curr += char
+        elif char == "|" and not in_s and not in_d:
+            cmds.append(curr)
+            curr = ""
         else:
-            current += char
-    commands.append(current)
-    return [c.strip() for c in commands if c.strip()]
+            curr += char
+    cmds.append(curr)
+    return [c.strip() for c in cmds if c.strip()]
 
 
 def get_input(builtins, history_log):
@@ -91,6 +121,24 @@ def get_input(builtins, history_log):
                         sys.stdout.write("\r\x1b[K$ ")
                 sys.stdout.flush()
                 continue
+            if char == "\t":
+                completions = get_completions(command, builtins)
+                if not completions:
+                    sys.stdout.write("\a")
+                elif len(completions) == 1:
+                    addition = completions[0][len(command) :] + " "
+                    command += addition
+                    sys.stdout.write(addition)
+                else:
+                    prefix = common_prefix(completions)
+                    if len(prefix) > len(command):
+                        addition = prefix[len(command) :]
+                        command += addition
+                        sys.stdout.write(addition)
+                    else:
+                        sys.stdout.write("\a")
+                sys.stdout.flush()
+                continue
             if char in ("\n", "\r"):
                 sys.stdout.write("\r\n")
                 return command
@@ -106,6 +154,20 @@ def get_input(builtins, history_log):
             sys.stdout.flush()
     finally:
         termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
+
+
+def load_history():
+    history_file = os.path.expanduser("~/.shell_history")
+    if os.path.exists(history_file):
+        with open(history_file, "r") as f:
+            return [line.strip() for line in f.readlines()]
+    return []
+
+
+def append_to_history(command):
+    history_file = os.path.expanduser("~/.shell_history")
+    with open(history_file, "a") as f:
+        f.write(command + "\n")
 
 
 def execute_single(command_str, builtins_list, history_log):
@@ -188,7 +250,7 @@ def execute_command(command_str, builtins_list, history_log):
 
 
 def main():
-    history_log = []
+    history_log = load_history()
     builtins_list = ["echo", "exit", "type", "pwd", "cd", "history"]
 
     while True:
@@ -225,9 +287,11 @@ def main():
             except Exception as e:
                 print(f"cd: {dest}: {e}")
             history_log.append(command)
+            append_to_history(command)
             continue
         elif parts[0] == "history" and len(parts) > 1 and parts[1] == "-r":
             history_log.append(command)
+            append_to_history(command)
             if len(parts) > 2 and os.path.exists(parts[2]):
                 with open(parts[2], "r") as f:
                     for line in f:
@@ -235,6 +299,7 @@ def main():
             continue
 
         history_log.append(command)
+        append_to_history(command)
 
         pid = os.fork()
         if pid == 0:
