@@ -97,12 +97,14 @@ def split_pipeline(command):
 def get_input(builtins, history_log):
     command = ""
     hist_idx = len(history_log)
+    tab_count = 0
     old_settings = termios.tcgetattr(sys.stdin)
     tty.setraw(sys.stdin)
     try:
         while True:
             char = sys.stdin.read(1)
             if char == "\x1b":
+                tab_count = 0
                 next1 = sys.stdin.read(1)
                 next2 = sys.stdin.read(1)
                 if next1 == "[" and next2 == "A":
@@ -125,30 +127,43 @@ def get_input(builtins, history_log):
                 completions = get_completions(command, builtins)
                 if not completions:
                     sys.stdout.write("\a")
+                    tab_count = 0
                 elif len(completions) == 1:
                     addition = completions[0][len(command) :] + " "
                     command += addition
                     sys.stdout.write(addition)
+                    tab_count = 0
                 else:
                     prefix = common_prefix(completions)
                     if len(prefix) > len(command):
                         addition = prefix[len(command) :]
                         command += addition
                         sys.stdout.write(addition)
+                        tab_count = 0
                     else:
-                        sys.stdout.write("\a")
+                        if tab_count == 0:
+                            sys.stdout.write("\a")
+                            tab_count += 1
+                        else:
+                            sys.stdout.write("\r\n")
+                            comps = sorted(completions)
+                            sys.stdout.write("  ".join(comps) + "\r\n")
+                            sys.stdout.write("$ " + command)
+                            tab_count = 0
                 sys.stdout.flush()
                 continue
             if char in ("\n", "\r"):
                 sys.stdout.write("\r\n")
                 return command
             elif char == "\x7f":
+                tab_count = 0
                 if len(command) > 0:
                     command = command[:-1]
                     sys.stdout.write("\b \b")
             elif char == "\x03":
                 sys.exit(0)
             else:
+                tab_count = 0
                 sys.stdout.write(char)
                 command += char
             sys.stdout.flush()
@@ -202,7 +217,12 @@ def execute_single(command_str, builtins_list, history_log):
 def execute_command(command_str, builtins_list, history_log):
     cmds = split_pipeline(command_str)
     if len(cmds) == 1:
-        execute_single(cmds[0], builtins_list, history_log)
+        pid = os.fork()
+        if pid == 0:
+            execute_single(cmds[0], builtins_list, history_log)
+            os._exit(0)
+        else:
+            os.waitpid(pid, 0)
         return
 
     fd_in = 0
@@ -283,13 +303,7 @@ def main():
             continue
 
         history_log.append(command)
-
-        pid = os.fork()
-        if pid == 0:
-            execute_command(command, builtins_list, history_log)
-            os._exit(0)
-        else:
-            os.waitpid(pid, 0)
+        execute_command(command, builtins_list, history_log)
 
 
 if __name__ == "__main__":
