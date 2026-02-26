@@ -220,7 +220,23 @@ def append_to_history(command):
     with open(history_file, "a") as f:
         f.write(command + "\n")
 
-
+def handle_history_file_ops(parts, history_log):
+    flag = parts[1]
+    filename = parts[2] if len(parts) > 2 else os.path.expanduser("~/.shell_history")
+    
+    if flag == "-r": # Read from file
+        if os.path.exists(filename):
+            with open(filename, "r") as f:
+                for line in f:
+                    history_log.append(line.strip())
+    elif flag == "-w": # Write to file (Overwrite)
+        with open(filename, "w") as f:
+            for cmd in history_log:
+                f.write(cmd + "\n")
+    elif flag == "-a": # Append to file
+        with open(filename, "a") as f:
+            for cmd in history_log:
+                f.write(cmd + "\n")
 def main():
     def main():
     history_log = load_history()
@@ -244,6 +260,13 @@ def main():
                     continue
             except ValueError: pass
 
+        # Process the command for state-changing flags
+        parts = parse_arguments(command)
+        if parts and parts[0] == "history" and len(parts) > 1:
+            if parts[1] in ["-r", "-w", "-a", "-c"]:
+                handle_history_logic(parts, history_log)
+                continue # Skip forking!
+
         # Save the expanded command to memory and file
         history_log.append(command)
         append_to_history(command)
@@ -264,10 +287,20 @@ def main():
                 print(f"cd: {destination}: {str(e)}")
             continue
 
-        elif cmd_name == "history" and len(parts) > 1 and parts[1] in ["-r", "-w", "-a"]:
-            # Handle reading/writing history in the parent so memory is preserved
-            handle_history_file_ops(parts, history_log)
-            continue
+        elif command_name == "history":
+        # Handle limiting (e.g., 'history 2')
+        limit = len(history_log)
+        if len(parts) > 1:
+            try:
+                limit = int(parts[1])
+            except ValueError:
+                pass
+
+        # Print history only ONCE with precise spacing
+        start_index = max(0, len(history_log) - limit)
+        for i in range(start_index, len(history_log)):
+            # spacing: two spaces, number, two spaces, command
+            sys.stdout.write(f"  {i + 1}  {history_log[i]}\n")
 
         # Handle Pipes
         commands = command.split("|")
