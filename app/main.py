@@ -4,23 +4,43 @@ import termios
 import tty
 
 
-def get_completions(prefix, builtins):
-    matches = set()
-    for b in builtins:
-        if b.startswith(prefix):
-            matches.add(b)
-    paths = os.environ.get("PATH", "").split(":")
-    for path in paths:
-        if os.path.isdir(path):
+def get_completions(command, builtins):
+    if " " not in command:
+        matches = set()
+        for b in builtins:
+            if b.startswith(command):
+                matches.add(b + " ")
+        paths = os.environ.get("PATH", "").split(":")
+        for path in paths:
+            if os.path.isdir(path):
+                try:
+                    for file in os.listdir(path):
+                        if file.startswith(command):
+                            full_path = os.path.join(path, file)
+                            if os.access(full_path, os.X_OK):
+                                matches.add(file + " ")
+                except Exception:
+                    pass
+        return list(matches)
+    else:
+        prefix = command[command.rfind(" ") + 1 :]
+        dir_name = os.path.dirname(prefix)
+        base_name = os.path.basename(prefix)
+        search_dir = dir_name if dir_name else "."
+        matches = set()
+        if os.path.isdir(search_dir):
             try:
-                for file in os.listdir(path):
-                    if file.startswith(prefix):
-                        full_path = os.path.join(path, file)
-                        if os.access(full_path, os.X_OK):
-                            matches.add(file)
-            except PermissionError:
+                for f in os.listdir(search_dir):
+                    if f.startswith(base_name):
+                        full_path = os.path.join(search_dir, f)
+                        suffix = "/" if os.path.isdir(full_path) else " "
+                        if dir_name:
+                            matches.add(os.path.join(dir_name, f) + suffix)
+                        else:
+                            matches.add(f + suffix)
+            except Exception:
                 pass
-    return list(matches)
+        return list(matches)
 
 
 def common_prefix(strings):
@@ -104,6 +124,8 @@ def get_input(builtins, history_log):
     try:
         while True:
             char = sys.stdin.read(1)
+            if not char:
+                return "exit"
             if char == "\x1b":
                 tab_count = 0
                 next1 = sys.stdin.read(1)
@@ -125,19 +147,22 @@ def get_input(builtins, history_log):
                 sys.stdout.flush()
                 continue
             if char == "\t":
+                prefix = (
+                    command[command.rfind(" ") + 1 :] if " " in command else command
+                )
                 completions = get_completions(command, builtins)
                 if not completions:
                     sys.stdout.write("\a")
                     tab_count = 0
                 elif len(completions) == 1:
-                    addition = completions[0][len(command) :] + " "
+                    addition = completions[0][len(prefix) :]
                     command += addition
                     sys.stdout.write(addition)
                     tab_count = 0
                 else:
-                    prefix = common_prefix(completions)
-                    if len(prefix) > len(command):
-                        addition = prefix[len(command) :]
+                    c_prefix = common_prefix(completions)
+                    if len(c_prefix) > len(prefix):
+                        addition = c_prefix[len(prefix) :]
                         command += addition
                         sys.stdout.write(addition)
                         tab_count = 0
@@ -147,8 +172,14 @@ def get_input(builtins, history_log):
                             tab_count += 1
                         else:
                             sys.stdout.write("\r\n")
-                            comps = sorted(completions)
-                            sys.stdout.write("  ".join(comps) + "\r\n")
+                            comps_to_print = sorted(
+                                [
+                                    os.path.basename(c.rstrip(" /"))
+                                    + ("/" if c.endswith("/") else "")
+                                    for c in completions
+                                ]
+                            )
+                            sys.stdout.write("  ".join(comps_to_print) + "\r\n")
                             sys.stdout.write("$ " + command)
                             tab_count = 0
                 sys.stdout.flush()
@@ -172,12 +203,6 @@ def get_input(builtins, history_log):
         termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
 
 
-def append_to_history(command):
-    history_file = os.path.expanduser("~/.shell_history")
-    with open(history_file, "a") as f:
-        f.write(command + "\n")
-
-
 def execute_single(command_str, builtins_list, history_log):
     parts = parse_arguments(command_str)
     if not parts:
@@ -191,22 +216,26 @@ def execute_single(command_str, builtins_list, history_log):
     append_err = False
 
     while i < len(parts):
-        if parts[i] in (">", "1>"):
-            redir_out = parts[i + 1]
-            append_out = False
-            i += 2
-        elif parts[i] in (">>", "1>>"):
-            redir_out = parts[i + 1]
-            append_out = True
-            i += 2
-        elif parts[i] == "2>":
-            redir_err = parts[i + 1]
-            append_err = False
-            i += 2
-        elif parts[i] == "2>>":
-            redir_err = parts[i + 1]
-            append_err = True
-            i += 2
+        if parts[i] in (">", "1>", "2>", ">>", "1>>", "2>>"):
+            if i + 1 < len(parts):
+                op = parts[i]
+                file = parts[i + 1]
+                if op in (">", "1>"):
+                    redir_out = file
+                    append_out = False
+                elif op in (">>", "1>>"):
+                    redir_out = file
+                    append_out = True
+                elif op == "2>":
+                    redir_err = file
+                    append_err = False
+                elif op == "2>>":
+                    redir_err = file
+                    append_err = True
+                i += 2
+            else:
+                new_parts.append(parts[i])
+                i += 1
         else:
             new_parts.append(parts[i])
             i += 1
@@ -217,16 +246,28 @@ def execute_single(command_str, builtins_list, history_log):
     old_stdout = os.dup(1)
     old_stderr = os.dup(2)
 
-    if redir_out:
-        mode = os.O_WRONLY | os.O_CREAT | (os.O_APPEND if append_out else os.O_TRUNC)
-        fd = os.open(redir_out, mode, 0o644)
-        os.dup2(fd, 1)
-        os.close(fd)
-    if redir_err:
-        mode = os.O_WRONLY | os.O_CREAT | (os.O_APPEND if append_err else os.O_TRUNC)
-        fd = os.open(redir_err, mode, 0o644)
-        os.dup2(fd, 2)
-        os.close(fd)
+    try:
+        if redir_out:
+            mode = (
+                os.O_WRONLY | os.O_CREAT | (os.O_APPEND if append_out else os.O_TRUNC)
+            )
+            fd = os.open(redir_out, mode, 0o644)
+            os.dup2(fd, 1)
+            os.close(fd)
+        if redir_err:
+            mode = (
+                os.O_WRONLY | os.O_CREAT | (os.O_APPEND if append_err else os.O_TRUNC)
+            )
+            fd = os.open(redir_err, mode, 0o644)
+            os.dup2(fd, 2)
+            os.close(fd)
+    except Exception as e:
+        sys.stderr.write(f"{new_parts[0]}: {e}\n")
+        os.dup2(old_stdout, 1)
+        os.dup2(old_stderr, 2)
+        os.close(old_stdout)
+        os.close(old_stderr)
+        return
 
     cmd_name = new_parts[0]
 
@@ -346,16 +387,17 @@ def main():
                 pass
 
         if command.strip() == "exit":
-            history_log.append(command)  # Add the exit command to history
-            hist_file = os.environ.get("HISTFILE")
+            history_log.append(command)
             if hist_file:
                 with open(hist_file, "a") as f:
                     for line in history_log[history_append_idx:]:
                         f.write(line + "\n")
             break
+
         parts = parse_arguments(command)
         if not parts:
             continue
+
         if parts[0] == "cd":
             dest = parts[1] if len(parts) > 1 else os.environ.get("HOME")
             try:
@@ -363,36 +405,38 @@ def main():
             except Exception:
                 sys.stdout.write(f"cd: {dest}: No such file or directory\n")
             history_log.append(command)
-            append_to_history(command)
             continue
+
         elif parts[0] == "history" and len(parts) > 1 and parts[1] == "-r":
             history_log.append(command)
-            append_to_history(command)
             file_path = parts[2] if len(parts) > 2 else ""
             if os.path.exists(file_path):
                 with open(file_path, "r") as f:
                     for line in f:
                         history_log.append(line.strip())
             continue
+
         elif parts[0] == "history" and len(parts) > 1 and parts[1] == "-w":
             history_log.append(command)
-            append_to_history(command)
-            if len(parts) > 2:
-                with open(parts[2], "w") as f:
+            file_path = parts[2] if len(parts) > 2 else ""
+            if file_path:
+                with open(file_path, "w") as f:
                     for line in history_log:
                         f.write(line + "\n")
+                history_append_idx = len(history_log)
             continue
+
         elif parts[0] == "history" and len(parts) > 1 and parts[1] == "-a":
             history_log.append(command)
-            append_to_history(command)
-            if len(parts) > 2:
-                with open(parts[2], "a") as f:
+            file_path = parts[2] if len(parts) > 2 else ""
+            if file_path:
+                with open(file_path, "a") as f:
                     for line in history_log[history_append_idx:]:
                         f.write(line + "\n")
                 history_append_idx = len(history_log)
             continue
+
         history_log.append(command)
-        append_to_history(command)
         execute_command(command, builtins_list, history_log)
 
 
