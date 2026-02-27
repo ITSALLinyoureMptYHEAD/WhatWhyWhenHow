@@ -8,4 +8,5 @@
 
 set -e # Exit on failure
 
-exec uv run --quiet -m app.main "$@"
+export PYTHONPATH="$(dirname "$0")"
+exec python3 -m app.main "$@"
